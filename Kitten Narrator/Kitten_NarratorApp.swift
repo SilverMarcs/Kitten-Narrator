@@ -1,10 +1,3 @@
-//
-//  Kitten_NarratorApp.swift
-//  Kitten Narrator
-//
-//  Created by Zabir Raihan on 16/04/2026.
-//
-
 import SwiftUI
 import SwiftData
 
@@ -12,7 +5,7 @@ import SwiftData
 struct Kitten_NarratorApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            NarratorItem.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 

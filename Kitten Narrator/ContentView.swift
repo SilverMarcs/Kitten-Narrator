@@ -1,80 +1,96 @@
-//
-//  ContentView.swift
-//  Kitten Narrator
-//
-//  Created by Zabir Raihan on 16/04/2026.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
+    @State private var viewModel = NarratorViewModel()
 
     var body: some View {
-        NavigationViewWrapper {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        Group {
+            switch viewModel.appState {
+            case .loading:
+                loadingView
+
+            case .downloading(let progress):
+                ModelDownloadView(progress: progress)
+
+            case .ready:
+                mainContent
+
+            case .error(let message):
+                errorView(message)
+            }
+        }
+        .tint(.orange)
+        .task {
+            await viewModel.initialize()
+        }
+        .sheet(isPresented: $viewModel.showAddContent) {
+            AddContentView()
+        }
+        .sheet(isPresented: $viewModel.showNowPlaying) {
+            NavigationStack {
+                NowPlayingView(viewModel: viewModel)
+            }
+            .presentationDragIndicator(.hidden)
+            .presentationCornerRadius(28)
+        }
+        .onChange(of: viewModel.audioPlayer.isPlaying) {
+            viewModel.saveCurrentPosition()
+        }
+    }
+
+    // MARK: - Main Content
+
+    private var mainContent: some View {
+        ZStack(alignment: .bottom) {
+            LibraryView(viewModel: viewModel)
+                .safeAreaPadding(.bottom, viewModel.currentItem != nil ? 60 : 0)
+
+            if viewModel.currentItem != nil {
+                MiniPlayerView(viewModel: viewModel)
+                    .onTapGesture {
+                        viewModel.showNowPlaying = true
                     }
-                }
-                .onDelete(perform: deleteItems)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
             }
-#if os(macOS)
-            .navigationSplitViewColumnWidth(min: 180, ideal: 200)
-#endif
-            .toolbar {
-#if os(iOS)
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
-                }
-#endif
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
+        }
+        .animation(.snappy(duration: 0.3), value: viewModel.currentItem?.id)
+    }
+
+    // MARK: - Loading
+
+    private var loadingView: some View {
+        VStack(spacing: 16) {
+            ProgressView()
+                .scaleEffect(1.2)
+            Text("Initializing...")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
         }
     }
 
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
+    // MARK: - Error
 
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+    private func errorView(_ message: String) -> some View {
+        ContentUnavailableView {
+            Label("Setup Failed", systemImage: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
+        } description: {
+            Text(message)
+        } actions: {
+            Button {
+                Task { await viewModel.initialize() }
+            } label: {
+                Text("Retry")
+                    .bold()
             }
+            .buttonStyle(.borderedProminent)
+            .tint(.orange)
         }
-    }
-}
-
-fileprivate struct NavigationViewWrapper<Content: View>: View {
-    let content: () -> Content
-
-    var body: some View {
-#if os(macOS)
-        NavigationSplitView {
-            content()
-        } detail: {
-            Text("Select an item")
-        }
-#else
-        content()
-#endif
     }
 }
 
 #Preview {
     ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+        .modelContainer(for: NarratorItem.self, inMemory: true)
 }

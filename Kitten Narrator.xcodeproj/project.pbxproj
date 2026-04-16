@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		0854230E2F902008007A1377 /* KittenTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 0854230D2F902008007A1377 /* KittenTTS */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileReference section */
 		085422FC2F901F45007A1377 /* Kitten Narrator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kitten Narrator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -23,6 +27,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0854230E2F902008007A1377 /* KittenTTS in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -65,6 +70,7 @@
 			);
 			name = "Kitten Narrator";
 			packageProductDependencies = (
+				0854230D2F902008007A1377 /* KittenTTS */,
 			);
 			productName = "Kitten Narrator";
 			productReference = 085422FC2F901F45007A1377 /* Kitten Narrator.app */;
@@ -94,6 +100,9 @@
 			);
 			mainGroup = 085422F32F901F45007A1377;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				0854230C2F902008007A1377 /* XCLocalSwiftPackageReference "../Frameworks/KittenTTS-swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 085422FD2F901F45007A1377 /* Products */;
 			projectDirPath = "";
@@ -264,6 +273,8 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -282,6 +293,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.4;
+				ENABLE_OUTGOING_CONNECTIONS = YES;
 			};
 			name = Debug;
 		};
@@ -308,6 +320,8 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -326,6 +340,7 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.4;
+				ENABLE_OUTGOING_CONNECTIONS = YES;
 			};
 			name = Release;
 		};
@@ -351,6 +366,20 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		0854230C2F902008007A1377 /* XCLocalSwiftPackageReference "../Frameworks/KittenTTS-swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../Frameworks/KittenTTS-swift";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		0854230D2F902008007A1377 /* KittenTTS */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KittenTTS;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 085422F42F901F45007A1377 /* Project object */;
 }
