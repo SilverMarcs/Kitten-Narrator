@@ -10,7 +10,7 @@ struct NowPlayingView: View {
 
     @State private var isDragging = false
     @State private var dragPosition: TimeInterval = 0
-    @State private var showLyrics = false
+    @State private var showLyrics = true
 
     /// The visible voice mirrors the global selection (the same value the
     /// Settings picker edits). This way switching voices here instantly
@@ -213,40 +213,65 @@ struct NowPlayingView: View {
     }
 
     private var transcriptScroll: some View {
-        ScrollView {
-            Text(viewModel.currentItem?.content ?? "")
-                .font(.title3)
-                .fontWeight(.medium)
-                .lineSpacing(8)
-                .foregroundStyle(.primary.opacity(0.92))
-                .multilineTextAlignment(.leading)
-                .textSelection(.enabled)
+        let words = (viewModel.currentItem?.content ?? "")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        let activeIndex = viewModel.currentWordIndex
+
+        return ScrollViewReader { proxy in
+            ScrollView {
+                FlowLayout(horizontalSpacing: 6, verticalSpacing: 10) {
+                    ForEach(Array(words.enumerated()), id: \.offset) { index, word in
+                        Text(word)
+                            .font(.title3)
+                            .fontWeight(.medium)
+                            .foregroundStyle(wordColor(at: index, activeIndex: activeIndex))
+                            .id(index)
+                    }
+                }
                 .padding(24)
                 .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .scrollIndicators(.hidden)
-        .mask(
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0.0),
-                    .init(color: .black, location: 0.05),
-                    .init(color: .black, location: 0.95),
-                    .init(color: .clear, location: 1.0),
-                ],
-                startPoint: .top,
-                endPoint: .bottom
+            }
+            .scrollIndicators(.hidden)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.0),
+                        .init(color: .black, location: 0.05),
+                        .init(color: .black, location: 0.95),
+                        .init(color: .clear, location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
             )
-        )
+            .onChange(of: activeIndex) {
+                withAnimation(.smooth(duration: 0.35)) {
+                    proxy.scrollTo(activeIndex, anchor: .center)
+                }
+            }
+        }
+    }
+
+    private func wordColor(at index: Int, activeIndex: Int) -> Color {
+        if index == activeIndex { return accent }
+        return index < activeIndex
+            ? Color.primary.opacity(0.35)
+            : Color.primary.opacity(0.85)
     }
 
     // MARK: - Dock
 
     private var playerDock: some View {
         VStack(spacing: 20) {
-            progressSection
+            if !viewModel.audioPlayer.isStreamingGeneration {
+                progressSection
+                    .transition(.opacity)
+            }
             controlsSection
             actionRow
         }
+        .animation(.smooth, value: viewModel.audioPlayer.isStreamingGeneration)
     }
 
     private var progressSection: some View {
@@ -324,7 +349,7 @@ struct NowPlayingView: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .circle)
-        .disabled(viewModel.isGenerating)
+        .disabled(viewModel.isGenerating || viewModel.audioPlayer.isStreamingGeneration)
         .accessibilityLabel(accessibility)
     }
 
@@ -412,6 +437,52 @@ struct NowPlayingView: View {
         }
         .buttonStyle(.plain)
         .glassEffect(.regular.tint(voice.color.opacity(0.35)).interactive(), in: .capsule)
+    }
+}
+
+// MARK: - Flow Layout
+
+private struct FlowLayout: Layout {
+    var horizontalSpacing: CGFloat = 0
+    var verticalSpacing: CGFloat = 0
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let result = computeLayout(proposal: proposal, subviews: subviews)
+        return result.size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = computeLayout(proposal: proposal, subviews: subviews)
+        for (index, frame) in result.frames.enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + frame.origin.x, y: bounds.minY + frame.origin.y),
+                proposal: ProposedViewSize(frame.size)
+            )
+        }
+    }
+
+    private func computeLayout(proposal: ProposedViewSize, subviews: Subviews) -> (size: CGSize, frames: [CGRect]) {
+        let maxWidth = proposal.width ?? .infinity
+        var frames: [CGRect] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var lineHeight: CGFloat = 0
+        var totalWidth: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth && x > 0 {
+                x = 0
+                y += lineHeight + verticalSpacing
+                lineHeight = 0
+            }
+            frames.append(CGRect(origin: CGPoint(x: x, y: y), size: size))
+            lineHeight = max(lineHeight, size.height)
+            x += size.width + horizontalSpacing
+            totalWidth = max(totalWidth, x)
+        }
+
+        return (CGSize(width: totalWidth, height: y + lineHeight), frames)
     }
 }
 

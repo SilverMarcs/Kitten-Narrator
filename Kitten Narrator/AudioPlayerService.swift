@@ -8,14 +8,32 @@ final class AudioPlayerService: NSObject {
     var duration: TimeInterval = 0
     var rate: Float = 1.0
 
-    private var audioPlayer: AVAudioPlayer?
-    private var positionTask: Task<Void, Never>?
+    /// True while chunks are still being appended via ``appendAudio(_:)``.
+    var isStreamingGeneration = false
 
+    // MARK: - File-based playback (cached audio)
+
+    private var audioPlayer: AVAudioPlayer?
+
+    // MARK: - Streaming playback (progressive generation)
+
+    private var audioEngine: AVAudioEngine?
+    private var playerNode: AVAudioPlayerNode?
+    private var streamingFormat: AVAudioFormat?
+    private var totalStreamedFrames: Int = 0
+    /// Accumulated samples for seeking and WAV export during streaming.
+    private(set) var accumulatedSamples: [Float] = []
+
+    // MARK: - Shared
+
+    private var positionTask: Task<Void, Never>?
     var onPlaybackFinished: (() -> Void)?
+
+    // MARK: - File Playback
 
     func play(url: URL, startPosition: TimeInterval = 0, rate: Float = 1.0) throws {
         setupAudioSession()
-        audioPlayer?.stop()
+        stopAll()
         audioPlayer = try AVAudioPlayer(contentsOf: url)
         audioPlayer?.delegate = self
         audioPlayer?.enableRate = true
@@ -27,20 +45,104 @@ final class AudioPlayerService: NSObject {
         isPlaying = true
         duration = audioPlayer?.duration ?? 0
         currentPosition = startPosition
-        startPositionTracking()
+        startFilePositionTracking()
     }
 
+    // MARK: - Streaming Playback
+
+    func beginStreaming(sampleRate: Int) throws {
+        setupAudioSession()
+        stopAll()
+
+        let engine = AVAudioEngine()
+        let player = AVAudioPlayerNode()
+        guard let format = AVAudioFormat(
+            standardFormatWithSampleRate: Double(sampleRate),
+            channels: 1
+        ) else { return }
+
+        engine.attach(player)
+        engine.connect(player, to: engine.mainMixerNode, format: format)
+        try engine.start()
+        // Don't call player.play() yet — wait for the first buffer in appendAudio().
+
+        audioEngine = engine
+        playerNode = player
+        streamingFormat = format
+        totalStreamedFrames = 0
+        accumulatedSamples = []
+        isStreamingGeneration = true
+        isPlaying = false
+        currentPosition = 0
+        duration = 0
+    }
+
+    func appendAudio(_ samples: [Float]) {
+        guard let player = playerNode, let format = streamingFormat else { return }
+        guard !samples.isEmpty else { return }
+
+        let isFirstChunk = accumulatedSamples.isEmpty
+
+        let buffer = AVAudioPCMBuffer(
+            pcmFormat: format,
+            frameCapacity: AVAudioFrameCount(samples.count)
+        )!
+        buffer.frameLength = AVAudioFrameCount(samples.count)
+        samples.withUnsafeBufferPointer { src in
+            buffer.floatChannelData![0].update(from: src.baseAddress!, count: samples.count)
+        }
+
+        player.scheduleBuffer(buffer)
+        accumulatedSamples.append(contentsOf: samples)
+        totalStreamedFrames += samples.count
+        duration = Double(totalStreamedFrames) / format.sampleRate
+
+        if isFirstChunk {
+            player.play()
+            isPlaying = true
+            startStreamPositionTracking()
+        }
+    }
+
+    func finishStreaming() {
+        isStreamingGeneration = false
+        // Schedule a completion callback so we know when all buffers drain.
+        guard let player = playerNode, let format = streamingFormat else { return }
+        let silence = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1)!
+        silence.frameLength = 0
+        player.scheduleBuffer(silence) { [weak self] in
+            Task { @MainActor in
+                guard let self, self.playerNode != nil else { return }
+                self.isPlaying = false
+                self.currentPosition = self.duration
+                self.stopPositionTracking()
+                self.onPlaybackFinished?()
+            }
+        }
+    }
+
+    // MARK: - Shared Controls
+
     func pause() {
-        audioPlayer?.pause()
+        if let player = playerNode {
+            player.pause()
+        } else {
+            audioPlayer?.pause()
+        }
         isPlaying = false
         stopPositionTracking()
         updateNowPlayingElapsed()
     }
 
     func resume() {
-        audioPlayer?.play()
+        if let player = playerNode {
+            player.play()
+            startStreamPositionTracking()
+        } else {
+            audioPlayer?.play()
+            startFilePositionTracking()
+        }
         isPlaying = true
-        startPositionTracking()
         updateNowPlayingElapsed()
     }
 
@@ -50,8 +152,31 @@ final class AudioPlayerService: NSObject {
 
     func seek(to position: TimeInterval) {
         let clamped = min(max(position, 0), duration)
-        audioPlayer?.currentTime = clamped
-        currentPosition = clamped
+
+        if let player = playerNode, let format = streamingFormat {
+            // Streaming seek: reschedule from accumulated samples.
+            let startSample = Int(clamped * format.sampleRate)
+            guard startSample < accumulatedSamples.count else { return }
+
+            player.stop()
+            let remaining = Array(accumulatedSamples[startSample...])
+            let buffer = AVAudioPCMBuffer(
+                pcmFormat: format,
+                frameCapacity: AVAudioFrameCount(remaining.count)
+            )!
+            buffer.frameLength = AVAudioFrameCount(remaining.count)
+            remaining.withUnsafeBufferPointer { src in
+                buffer.floatChannelData![0].update(from: src.baseAddress!, count: remaining.count)
+            }
+            player.scheduleBuffer(buffer)
+            player.play()
+            currentPosition = clamped
+            // Offset tracking needs to account for the seek
+            streamSeekOffset = clamped
+        } else {
+            audioPlayer?.currentTime = clamped
+            currentPosition = clamped
+        }
         updateNowPlayingElapsed()
     }
 
@@ -66,13 +191,29 @@ final class AudioPlayerService: NSObject {
     func setRate(_ newRate: Float) {
         let clamped = min(max(newRate, 0.5), 2.0)
         audioPlayer?.rate = clamped
+        // Streaming mode: rate is baked into generated audio, no runtime adjustment.
         self.rate = clamped
         updateNowPlayingElapsed()
     }
 
     func stop() {
+        stopAll()
+    }
+
+    private func stopAll() {
         audioPlayer?.stop()
         audioPlayer = nil
+
+        playerNode?.stop()
+        audioEngine?.stop()
+        playerNode = nil
+        audioEngine = nil
+        streamingFormat = nil
+        accumulatedSamples = []
+        totalStreamedFrames = 0
+        isStreamingGeneration = false
+        streamSeekOffset = 0
+
         isPlaying = false
         currentPosition = 0
         duration = 0
@@ -92,12 +233,34 @@ final class AudioPlayerService: NSObject {
 
     // MARK: - Position Tracking
 
-    private func startPositionTracking() {
+    private var streamSeekOffset: TimeInterval = 0
+
+    private func startFilePositionTracking() {
         stopPositionTracking()
         positionTask = Task { [weak self] in
             while !Task.isCancelled {
                 guard let self else { return }
                 self.currentPosition = self.audioPlayer?.currentTime ?? 0
+                try? await Task.sleep(for: .milliseconds(100))
+            }
+        }
+    }
+
+    private func startStreamPositionTracking() {
+        stopPositionTracking()
+        positionTask = Task { [weak self] in
+            while !Task.isCancelled {
+                guard let self,
+                      let player = self.playerNode,
+                      let nodeTime = player.lastRenderTime,
+                      nodeTime.isSampleTimeValid,
+                      let playerTime = player.playerTime(forNodeTime: nodeTime)
+                else {
+                    try? await Task.sleep(for: .milliseconds(100))
+                    continue
+                }
+                let elapsed = Double(playerTime.sampleTime) / playerTime.sampleRate
+                self.currentPosition = self.streamSeekOffset + max(0, elapsed)
                 try? await Task.sleep(for: .milliseconds(100))
             }
         }

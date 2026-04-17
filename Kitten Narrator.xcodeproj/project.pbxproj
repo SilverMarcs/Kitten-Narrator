@@ -101,7 +101,7 @@
 			mainGroup = 085422F32F901F45007A1377;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				0854230C2F902008007A1377 /* XCLocalSwiftPackageReference "../Frameworks/KittenTTS-swift" */,
+				0854230C2F902008007A1377 /* XCRemoteSwiftPackageReference "KittenTTS-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 085422FD2F901F45007A1377 /* Products */;
@@ -367,16 +367,21 @@
 		};
 /* End XCConfigurationList section */
 
-/* Begin XCLocalSwiftPackageReference section */
-		0854230C2F902008007A1377 /* XCLocalSwiftPackageReference "../Frameworks/KittenTTS-swift" */ = {
-			isa = XCLocalSwiftPackageReference;
-			relativePath = "../Frameworks/KittenTTS-swift";
+/* Begin XCRemoteSwiftPackageReference section */
+		0854230C2F902008007A1377 /* XCRemoteSwiftPackageReference "KittenTTS-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SilverMarcs/KittenTTS-swift.git";
+			requirement = {
+				branch = "feature/word-timestamps";
+				kind = branch;
+			};
 		};
-/* End XCLocalSwiftPackageReference section */
+/* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
 		0854230D2F902008007A1377 /* KittenTTS */ = {
 			isa = XCSwiftPackageProductDependency;
+			package = 0854230C2F902008007A1377 /* XCRemoteSwiftPackageReference "KittenTTS-swift" */;
 			productName = KittenTTS;
 		};
 /* End XCSwiftPackageProductDependency section */

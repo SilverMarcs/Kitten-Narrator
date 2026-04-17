@@ -1,6 +1,15 @@
 {
-  "originHash" : "233a33aded201991a9e000be24f20dea9a95a89b51c16678b540aaceb56892a0",
+  "originHash" : "0d39f614f87f54f5adb6097165dd427c07fd9667ba5bc30f5cd8c6100959ff7f",
   "pins" : [
+    {
+      "identity" : "kittentts-swift",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SilverMarcs/KittenTTS-swift.git",
+      "state" : {
+        "branch" : "feature/word-timestamps",
+        "revision" : "50e56463a1a8716d5d9a56a861eee36d36d49ae1"
+      }
+    },
     {
       "identity" : "onnxruntime-swift-package-manager",
       "kind" : "remoteSourceControl",
