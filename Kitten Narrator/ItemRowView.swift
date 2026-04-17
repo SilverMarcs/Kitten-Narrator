@@ -4,6 +4,8 @@ struct ItemRowView: View {
     let item: NarratorItem
     let viewModel: NarratorViewModel
 
+    @Environment(\.accent) private var accent
+
     private var isCurrentItem: Bool {
         viewModel.currentItem?.id == item.id
     }
@@ -12,41 +14,71 @@ struct ItemRowView: View {
         viewModel.generatingItemID == item.id
     }
 
-    var body: some View {
-        HStack(spacing: 14) {
-            iconView
-            contentView
-            Spacer(minLength: 0)
-        }
-        .padding(.vertical, 6)
-        .contentShape(Rectangle())
+    private var isPlayingNow: Bool {
+        isCurrentItem && viewModel.audioPlayer.isPlaying
     }
 
-    // MARK: - Icon
+    var body: some View {
+        HStack(spacing: 14) {
+            avatar
+            content
+            Spacer(minLength: 0)
+            trailing
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .opacity(isCurrentItem ? 1 : 0.55)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .stroke(
+                    isCurrentItem
+                    ? LinearGradient(colors: [accent.opacity(0.9), accent.opacity(0.35)],
+                                     startPoint: .topLeading,
+                                     endPoint: .bottomTrailing)
+                    : LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.02)],
+                                     startPoint: .topLeading,
+                                     endPoint: .bottomTrailing),
+                    lineWidth: isCurrentItem ? 1.5 : 0.5
+                )
+        )
+        .animation(.snappy(duration: 0.25), value: isCurrentItem)
+        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
 
-    private var iconView: some View {
+    // MARK: - Avatar
+
+    private var avatar: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(isCurrentItem ? Color.orange : Color.orange.opacity(0.1))
-                .frame(width: 50, height: 50)
+                .fill(
+                    isCurrentItem
+                    ? AnyShapeStyle(accent.brandGradient)
+                    : AnyShapeStyle(accent.opacity(0.18))
+                )
+                .frame(width: 56, height: 56)
 
             Group {
                 if isGenerating {
                     ProgressView()
-                        .tint(isCurrentItem ? .white : .orange)
-                } else if isCurrentItem && viewModel.audioPlayer.isPlaying {
+                        .controlSize(.small)
+                        .tint(isCurrentItem ? .white : accent)
+                } else if isPlayingNow {
                     Image(systemName: "waveform")
-                        .font(.title3.weight(.medium))
+                        .font(.title3.weight(.semibold))
                         .foregroundStyle(.white)
-                        .symbolEffect(.variableColor.iterative.reversing)
+                        .symbolEffect(.variableColor.iterative.reversing,
+                                      options: .repeat(.continuous))
                 } else if isCurrentItem {
                     Image(systemName: "pause.fill")
-                        .font(.title3)
+                        .font(.title3.weight(.bold))
                         .foregroundStyle(.white)
                 } else {
                     Image(systemName: item.sourceIcon)
-                        .font(.title3)
-                        .foregroundStyle(.orange)
+                        .font(.title3.weight(.semibold))
+                        .foregroundStyle(accent)
                 }
             }
         }
@@ -54,60 +86,77 @@ struct ItemRowView: View {
 
     // MARK: - Content
 
-    private var contentView: some View {
-        VStack(alignment: .leading, spacing: 5) {
+    private var content: some View {
+        VStack(alignment: .leading, spacing: 6) {
             Text(item.title)
-                .font(.body.weight(.semibold))
+                .font(.callout.weight(.semibold))
                 .lineLimit(2)
                 .foregroundStyle(.primary)
 
-            HStack(spacing: 6) {
-                if item.hasGeneratedAudio {
+            HStack(spacing: 8) {
+                if isGenerating {
+                    Label("Generating", systemImage: "sparkles")
+                        .foregroundStyle(accent)
+                } else if item.hasGeneratedAudio {
                     Label(formatDuration(item.audioDuration), systemImage: "clock")
                 } else {
-                    Label("\(item.wordCount) words", systemImage: "text.word.spacing")
+                    Label(item.estimatedListenTime, systemImage: "clock")
                 }
 
-                Circle()
-                    .fill(.secondary.opacity(0.5))
-                    .frame(width: 3, height: 3)
+                Dot()
 
-                Text(item.createdAt, style: .relative)
+                Text(item.createdAt, format: .relative(presentation: .named))
                     .lineLimit(1)
 
                 if item.isCompleted {
-                    Circle()
-                        .fill(.secondary.opacity(0.5))
-                        .frame(width: 3, height: 3)
-
-                    Image(systemName: "checkmark.circle.fill")
+                    Dot()
+                    Image(systemName: "checkmark.seal.fill")
                         .foregroundStyle(.green)
                 }
             }
-            .font(.caption)
+            .font(.caption.weight(.medium))
             .foregroundStyle(.secondary)
 
-            // Progress indicator
-            if item.hasGeneratedAudio && item.progressPercentage > 0.01 && !item.isCompleted {
-                GeometryReader { geo in
-                    Capsule()
-                        .fill(Color.secondary.opacity(0.15))
-                        .overlay(alignment: .leading) {
-                            Capsule()
-                                .fill(Color.orange)
-                                .frame(width: geo.size.width * item.progressPercentage)
-                        }
-                }
-                .frame(height: 3)
-                .clipShape(Capsule())
+            if item.hasGeneratedAudio && item.progressPercentage > 0.005 && !item.isCompleted {
+                progressBar
             }
         }
     }
 
-    private func formatDuration(_ seconds: Double) -> String {
-        let mins = Int(seconds) / 60
-        let secs = Int(seconds) % 60
-        if mins == 0 { return "\(secs)s" }
-        return String(format: "%d:%02d", mins, secs)
+    private var progressBar: some View {
+        GeometryReader { geo in
+            Capsule()
+                .fill(.secondary.opacity(0.15))
+                .overlay(alignment: .leading) {
+                    Capsule()
+                        .fill(isCurrentItem ? AnyShapeStyle(accent.brandGradient)
+                                            : AnyShapeStyle(Color.secondary.opacity(0.6)))
+                        .frame(width: geo.size.width * item.progressPercentage)
+                }
+        }
+        .frame(height: 3)
+        .clipShape(Capsule())
+        .padding(.top, 2)
+    }
+
+    // MARK: - Trailing
+
+    @ViewBuilder
+    private var trailing: some View {
+        if !isCurrentItem {
+            VStack(alignment: .trailing, spacing: 4) {
+                Image(systemName: item.hasGeneratedAudio ? "play.circle" : "wand.and.stars")
+                    .font(.title2)
+                    .foregroundStyle(accent.opacity(0.85))
+            }
+        }
+    }
+}
+
+private struct Dot: View {
+    var body: some View {
+        Circle()
+            .fill(.secondary.opacity(0.4))
+            .frame(width: 3, height: 3)
     }
 }

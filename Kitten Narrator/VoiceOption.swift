@@ -41,16 +41,18 @@ enum VoiceOption: String, CaseIterable, Identifiable, Sendable {
         }
     }
 
+    /// Each voice gets a distinct hue spaced around the wheel so no two feel
+    /// the same. Tuned for good contrast on both light & dark backgrounds.
     var iconColor: (red: Double, green: Double, blue: Double) {
         switch self {
-        case .bella: return (0.95, 0.55, 0.35)
-        case .jasper: return (0.35, 0.55, 0.85)
-        case .luna: return (0.65, 0.50, 0.85)
-        case .bruno: return (0.40, 0.65, 0.50)
-        case .rosie: return (0.90, 0.45, 0.55)
-        case .hugo: return (0.50, 0.60, 0.70)
-        case .kiki: return (0.95, 0.65, 0.75)
-        case .leo: return (0.55, 0.70, 0.45)
+        case .bella:  return (0.98, 0.50, 0.25)   // Coral orange   ~20°
+        case .kiki:   return (0.98, 0.76, 0.22)   // Saffron yellow ~45°
+        case .leo:    return (0.28, 0.72, 0.42)   // Forest green   ~140°
+        case .bruno:  return (0.12, 0.68, 0.62)   // Teal           ~175°
+        case .jasper: return (0.22, 0.58, 0.96)   // Clear blue     ~212°
+        case .hugo:   return (0.34, 0.38, 0.82)   // Royal indigo   ~235°
+        case .luna:   return (0.62, 0.48, 0.94)   // Lavender       ~265°
+        case .rosie:  return (0.95, 0.28, 0.60)   // Hot pink       ~330°
         }
     }
 

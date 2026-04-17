@@ -2,123 +2,260 @@ import SwiftUI
 
 struct NowPlayingView: View {
     @Bindable var viewModel: NarratorViewModel
+    var namespace: Namespace.ID
+    var artworkID: String
+
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.accent) private var accent
+
     @State private var isDragging = false
     @State private var dragPosition: TimeInterval = 0
+    @State private var showLyrics = false
+
+    /// The visible voice mirrors the global selection (the same value the
+    /// Settings picker edits). This way switching voices here instantly
+    /// retints the whole app, and the chip here always agrees with Settings.
+    private var voice: VoiceOption {
+        viewModel.currentVoice
+    }
+
+    private var displayedPosition: TimeInterval {
+        isDragging ? dragPosition : viewModel.audioPlayer.currentPosition
+    }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Drag handle
-            Capsule()
-                .fill(.secondary.opacity(0.4))
-                .frame(width: 36, height: 5)
-                .padding(.top, 10)
-                .padding(.bottom, 6)
-
-            ScrollView {
-                VStack(spacing: 28) {
-                    artworkView
-                        .padding(.horizontal, 48)
-                        .padding(.top, 20)
-
-                    titleSection
-                        .padding(.horizontal, 32)
-
-                    progressSection
-                        .padding(.horizontal, 32)
-
-                    controlsSection
-
-                    bottomControls
-                        .padding(.horizontal, 28)
-                }
-                .padding(.bottom, 40)
-            }
-            .scrollIndicators(.hidden)
-        }
-        .background(backgroundGradient)
-        .onDisappear {
-            viewModel.saveCurrentPosition()
-        }
-    }
-
-    // MARK: - Artwork
-
-    private var artworkView: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            Color.orange.opacity(0.2),
-                            Color.orange.opacity(0.08),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .aspectRatio(1, contentMode: .fit)
-                .shadow(color: .orange.opacity(0.15), radius: 24, y: 12)
+            VoiceBackdrop(color: voice.color)
+                .ignoresSafeArea()
 
-            if viewModel.isGenerating {
-                VStack(spacing: 20) {
-                    ProgressView()
-                        .scaleEffect(1.8)
-                        .tint(.orange)
+            VStack(spacing: 0) {
+                topBar
+                    .padding(.horizontal, 16)
+                    .padding(.top, 6)
 
-                    Text("Generating audio...")
-                        .font(.callout.weight(.medium))
-                        .foregroundStyle(.secondary)
-                }
-            } else {
-                VStack(spacing: 20) {
-                    Image(systemName: "waveform")
-                        .font(.system(size: 56, weight: .medium))
-                        .foregroundStyle(.orange)
-                        .symbolEffect(.variableColor.iterative.reversing, isActive: viewModel.audioPlayer.isPlaying)
-
-                    // Text preview
-                    if let content = viewModel.currentItem?.content {
-                        Text(content.prefix(200))
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .multilineTextAlignment(.center)
-                            .lineLimit(5)
-                            .padding(.horizontal, 32)
+                // Middle area: artwork or transcript.
+                ZStack {
+                    if showLyrics {
+                        transcriptStage
+                            .transition(.opacity)
+                    } else {
+                        artworkStage
+                            .transition(.opacity)
                     }
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                playerDock
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
             }
+            .frame(maxWidth: 560)
+            .frame(maxWidth: .infinity)
+        }
+        #if os(iOS)
+        .toolbar(.hidden, for: .navigationBar)
+        #endif
+        .onDisappear { viewModel.saveCurrentPosition() }
+    }
+
+    // MARK: - Top bar (drag handle + ellipsis, no close)
+
+    private var topBar: some View {
+        ZStack {
+            // Centered custom drag handle
+            Capsule()
+                .fill(.secondary.opacity(0.4))
+                .frame(width: 40, height: 5)
+                .accessibilityHidden(true)
+
+            HStack {
+                Spacer(minLength: 0)
+
+                Menu {
+                    Button {
+                        withAnimation(.smooth) { showLyrics.toggle() }
+                    } label: {
+                        Label(showLyrics ? "Hide transcript" : "Show transcript",
+                              systemImage: "text.quote")
+                    }
+
+                    if viewModel.currentItem?.hasGeneratedAudio == true && !viewModel.isGenerating {
+                        Button {
+                            Task { await viewModel.regenerateCurrentItem() }
+                        } label: {
+                            Label("Regenerate audio", systemImage: "arrow.clockwise")
+                        }
+                    }
+
+                    if viewModel.currentItem != nil {
+                        Divider()
+                        Button(role: .destructive) {
+                            viewModel.stop()
+                            dismiss()
+                        } label: {
+                            Label("Stop playback", systemImage: "stop.circle")
+                        }
+                    }
+                } label: {
+                    Image(systemName: "ellipsis")
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.primary)
+                        .frame(width: 38, height: 38)
+                        .contentShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .glassEffect(.regular.interactive(), in: .circle)
+                .accessibilityLabel("More")
+            }
+        }
+        .frame(height: 44)
+    }
+
+    // MARK: - Artwork stage
+
+    private var artworkStage: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 0)
+
+            artwork
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: 320)
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, 28)
+
+            titleSection
+                .padding(.horizontal, 28)
+
+            Spacer(minLength: 0)
         }
     }
 
-    // MARK: - Title
+    private var artwork: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(voice.gradient)
+                .shadow(color: voice.color.opacity(0.45), radius: 40, y: 20)
+
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .stroke(
+                    LinearGradient(
+                        colors: [.white.opacity(0.55), .white.opacity(0.05)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    ),
+                    lineWidth: 1
+                )
+
+            if viewModel.isGenerating {
+                VStack(spacing: 14) {
+                    ProgressView()
+                        .controlSize(.large)
+                        .tint(.white)
+                    Text("Generating audio…")
+                        .font(.callout.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.9))
+                }
+            } else {
+                Image(systemName: "waveform")
+                    .font(.system(size: 92, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.95))
+                    .symbolEffect(.variableColor.iterative.reversing,
+                                  options: .repeat(.continuous),
+                                  isActive: viewModel.audioPlayer.isPlaying)
+            }
+        }
+    }
 
     private var titleSection: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 4) {
             Text(viewModel.currentItem?.title ?? "Untitled")
-                .font(.title3.bold())
-                .lineLimit(2)
+                .font(.title2.bold())
                 .multilineTextAlignment(.center)
+                .lineLimit(2)
+                .foregroundStyle(.primary)
 
-            HStack(spacing: 6) {
-                Text(viewModel.currentVoice.displayName)
-                Circle().fill(.secondary).frame(width: 3, height: 3)
-                Text(speedLabel)
-            }
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
+            Text(voice.displayName)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(accent)
         }
     }
 
-    // MARK: - Progress
+    // MARK: - Transcript stage
+
+    private var transcriptStage: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(voice.gradient)
+                    .frame(width: 44, height: 44)
+                    .overlay(
+                        Image(systemName: "waveform")
+                            .font(.callout.weight(.bold))
+                            .foregroundStyle(.white)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.currentItem?.title ?? "Untitled")
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Text(voice.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 24)
+
+            transcriptScroll
+                .padding(.horizontal, 16)
+        }
+    }
+
+    private var transcriptScroll: some View {
+        ScrollView {
+            Text(viewModel.currentItem?.content ?? "")
+                .font(.title3)
+                .fontWeight(.medium)
+                .lineSpacing(8)
+                .foregroundStyle(.primary.opacity(0.92))
+                .multilineTextAlignment(.leading)
+                .textSelection(.enabled)
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .scrollIndicators(.hidden)
+        .mask(
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0.0),
+                    .init(color: .black, location: 0.05),
+                    .init(color: .black, location: 0.95),
+                    .init(color: .clear, location: 1.0),
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+        )
+    }
+
+    // MARK: - Dock
+
+    private var playerDock: some View {
+        VStack(spacing: 20) {
+            progressSection
+            controlsSection
+            actionRow
+        }
+    }
 
     private var progressSection: some View {
-        VStack(spacing: 8) {
+        VStack(spacing: 2) {
             Slider(
                 value: Binding(
-                    get: { isDragging ? dragPosition : viewModel.audioPlayer.currentPosition },
+                    get: { displayedPosition },
                     set: { newValue in
-                        isDragging = true
+                        if !isDragging { isDragging = true }
                         dragPosition = newValue
                     }
                 ),
@@ -130,144 +267,177 @@ struct NowPlayingView: View {
                     }
                 }
             )
-            .tint(.orange)
             .disabled(viewModel.isGenerating)
 
             HStack {
-                Text(formatTime(isDragging ? dragPosition : viewModel.audioPlayer.currentPosition))
+                Text(formatDuration(displayedPosition))
                 Spacer()
-                let remaining = max(0, viewModel.audioPlayer.duration - (isDragging ? dragPosition : viewModel.audioPlayer.currentPosition))
-                Text("-\(formatTime(remaining))")
+                let remaining = max(0, viewModel.audioPlayer.duration - displayedPosition)
+                Text("-\(formatDuration(remaining))")
             }
             .font(.caption.monospacedDigit())
             .foregroundStyle(.secondary)
         }
     }
 
-    // MARK: - Controls
-
+    // Liquid-glass skip circles + accent-gradient play button.
     private var controlsSection: some View {
-        HStack(spacing: 44) {
-            Button { viewModel.skipBackward() } label: {
-                Image(systemName: "gobackward.15")
-                    .font(.title2)
-            }
-            .disabled(viewModel.isGenerating)
+        GlassEffectContainer(spacing: 18) {
+            HStack(spacing: 18) {
+                skipButton(icon: "gobackward.15", accessibility: "Back 15 seconds") {
+                    viewModel.skipBackward()
+                }
 
-            Button { viewModel.togglePlayPause() } label: {
-                ZStack {
-                    Circle()
-                        .fill(.orange)
-                        .frame(width: 72, height: 72)
+                Button {
+                    viewModel.togglePlayPause()
+                } label: {
+                    ZStack {
+                        Circle()
+                            .fill(accent.brandGradient)
+                            .frame(width: 84, height: 84)
+                            .shadow(color: accent.opacity(0.45), radius: 20, y: 8)
 
-                    Image(systemName: viewModel.audioPlayer.isPlaying ? "pause.fill" : "play.fill")
-                        .font(.title)
-                        .foregroundStyle(.white)
+                        Image(systemName: viewModel.audioPlayer.isPlaying ? "pause.fill" : "play.fill")
+                            .font(.system(size: 34, weight: .bold))
+                            .foregroundStyle(.white)
+                            .contentTransition(.symbolEffect(.replace.downUp))
+                            .offset(x: viewModel.audioPlayer.isPlaying ? 0 : 3)
+                    }
+                }
+                .buttonStyle(.plain)
+                .disabled(viewModel.isGenerating)
+                .accessibilityLabel(viewModel.audioPlayer.isPlaying ? "Pause" : "Play")
+
+                skipButton(icon: "goforward.15", accessibility: "Forward 15 seconds") {
+                    viewModel.skipForward()
                 }
             }
-            .disabled(viewModel.isGenerating)
-
-            Button { viewModel.skipForward() } label: {
-                Image(systemName: "goforward.15")
-                    .font(.title2)
-            }
-            .disabled(viewModel.isGenerating)
         }
-        .foregroundStyle(.primary)
     }
 
-    // MARK: - Bottom Controls
+    private func skipButton(icon: String, accessibility: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(.primary)
+                .frame(width: 56, height: 56)
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .circle)
+        .disabled(viewModel.isGenerating)
+        .accessibilityLabel(accessibility)
+    }
 
-    private var bottomControls: some View {
-        HStack {
-            // Speed control
-            Menu {
-                ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { speed in
-                    Button {
-                        viewModel.setSpeed(Float(speed))
-                    } label: {
-                        HStack {
-                            Text(formatSpeed(speed))
-                            if abs(Double(viewModel.playbackSpeed) - speed) < 0.01 {
-                                Image(systemName: "checkmark")
-                            }
+    // MARK: - Action row (speed, transcript centered, voice)
+
+    private var actionRow: some View {
+        // Use a flanking HStack (speed left, voice right) and overlay the
+        // transcript button as a dead-centered floating chip so its position
+        // is not affected by the varying width of the voice name.
+        HStack(spacing: 0) {
+            speedChip
+
+            Spacer(minLength: 0)
+
+            voiceChip
+        }
+        .overlay {
+            transcriptChip
+        }
+        .frame(maxWidth: 460)
+        .frame(maxWidth: .infinity)
+    }
+
+    private var speedChip: some View {
+        Menu {
+            ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { speed in
+                Button {
+                    viewModel.setSpeed(Float(speed))
+                } label: {
+                    HStack {
+                        Text(formatSpeed(speed))
+                        if abs(Double(viewModel.playbackSpeed) - speed) < 0.01 {
+                            Image(systemName: "checkmark")
                         }
                     }
                 }
-            } label: {
-                Text(formatSpeed(Double(viewModel.playbackSpeed)))
-                    .font(.subheadline.weight(.semibold))
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .background(.ultraThinMaterial, in: Capsule())
             }
-
-            Spacer()
-
-            // Regenerate
-            if viewModel.currentItem?.hasGeneratedAudio == true && !viewModel.isGenerating {
-                Button {
-                    Task { await viewModel.regenerateCurrentItem() }
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(.subheadline.weight(.semibold))
-                        .padding(8)
-                        .background(.ultraThinMaterial, in: Circle())
-                }
-            }
-
-            Spacer()
-
-            // Voice picker
-            NavigationLink {
-                VoicePickerView(selectedVoice: $viewModel.selectedVoice)
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "person.wave.2")
-                    Text(viewModel.currentVoice.displayName)
-                }
-                .font(.subheadline.weight(.semibold))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 8)
-                .background(.ultraThinMaterial, in: Capsule())
-            }
+        } label: {
+            Text(formatSpeed(Double(viewModel.playbackSpeed)))
+                .font(.footnote.weight(.bold).monospacedDigit())
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+                .frame(width: 52, height: 38)
+                .contentShape(Capsule())
         }
-        .foregroundStyle(.primary)
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .accessibilityLabel("Playback speed")
     }
 
-    // MARK: - Background
-
-    private var backgroundGradient: some View {
-        LinearGradient(
-            colors: [
-                Color(white: 1.0, opacity: 0.001),
-                Color.orange.opacity(0.04),
-            ],
-            startPoint: .top,
-            endPoint: .bottom
+    private var transcriptChip: some View {
+        Button {
+            withAnimation(.smooth) { showLyrics.toggle() }
+        } label: {
+            Image(systemName: "quote.bubble")
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(showLyrics ? .white : .primary)
+                .frame(width: 52, height: 38)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(
+            showLyrics
+            ? .regular.tint(accent.opacity(0.85)).interactive()
+            : .regular.interactive(),
+            in: .capsule
         )
-        .ignoresSafeArea()
+        .accessibilityLabel(showLyrics ? "Hide transcript" : "Show transcript")
     }
 
-    // MARK: - Helpers
-
-    private var speedLabel: String {
-        let speed = viewModel.playbackSpeed
-        if abs(speed - 1.0) < 0.01 { return "Normal" }
-        return formatSpeed(Double(speed))
-    }
-
-    private func formatSpeed(_ speed: Double) -> String {
-        if speed == floor(speed) {
-            return "\(Int(speed))x"
+    private var voiceChip: some View {
+        NavigationLink {
+            VoicePickerView(selectedVoice: $viewModel.selectedVoice)
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "person.wave.2.fill")
+                    .font(.footnote.weight(.bold))
+                Text(voice.displayName)
+                    .font(.footnote.weight(.bold))
+            }
+            .foregroundStyle(.primary)
+            .padding(.horizontal, 14)
+            .frame(height: 38)
+            .contentShape(Capsule())
         }
-        return String(format: "%.2gx", speed)
+        .buttonStyle(.plain)
+        .glassEffect(.regular.tint(voice.color.opacity(0.35)).interactive(), in: .capsule)
     }
+}
 
-    private func formatTime(_ seconds: TimeInterval) -> String {
-        let total = max(0, Int(seconds))
-        let mins = total / 60
-        let secs = total % 60
-        return String(format: "%d:%02d", mins, secs)
+// MARK: - Voice-tinted backdrop (static)
+
+private struct VoiceBackdrop: View {
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            Color.appBackground
+
+            RadialGradient(
+                colors: [color.opacity(0.40), .clear],
+                center: .init(x: 0.25, y: 0.15),
+                startRadius: 20,
+                endRadius: 420
+            )
+
+            RadialGradient(
+                colors: [color.opacity(0.22), .clear],
+                center: .init(x: 0.80, y: 0.85),
+                startRadius: 20,
+                endRadius: 420
+            )
+        }
+        .animation(.smooth(duration: 0.8), value: color)
     }
 }
