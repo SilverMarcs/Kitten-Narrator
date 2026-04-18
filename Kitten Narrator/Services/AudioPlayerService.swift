@@ -266,7 +266,7 @@ final class AudioPlayerService: NSObject {
 
     // MARK: - Now Playing Info
 
-    func updateNowPlayingInfo(title: String, artist: String = "Narrator") {
+    func updateNowPlayingInfo(title: String, artist: String = "Narrator", artworkURL: URL? = nil) {
         var info = [String: Any]()
         info[MPMediaItemPropertyTitle] = title
         info[MPMediaItemPropertyArtist] = artist
@@ -274,6 +274,20 @@ final class AudioPlayerService: NSObject {
         info[MPNowPlayingInfoPropertyElapsedPlaybackTime] = currentPosition
         info[MPNowPlayingInfoPropertyPlaybackRate] = isPlaying ? Double(rate) : 0.0
         MPNowPlayingInfoCenter.default().nowPlayingInfo = info
+
+        if let artworkURL {
+            Task {
+                guard let (data, _) = try? await URLSession.shared.data(from: artworkURL) else { return }
+                #if os(iOS)
+                guard let uiImage = UIImage(data: data) else { return }
+                let artwork = MPMediaItemArtwork(boundsSize: uiImage.size) { _ in uiImage }
+                #elseif os(macOS)
+                guard let nsImage = NSImage(data: data) else { return }
+                let artwork = MPMediaItemArtwork(boundsSize: nsImage.size) { _ in nsImage }
+                #endif
+                MPNowPlayingInfoCenter.default().nowPlayingInfo?[MPMediaItemPropertyArtwork] = artwork
+            }
+        }
     }
 
     private func updateNowPlayingElapsed() {

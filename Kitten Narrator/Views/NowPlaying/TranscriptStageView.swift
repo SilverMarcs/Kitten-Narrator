@@ -4,6 +4,9 @@ struct TranscriptStageView: View {
     @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.accent) private var accent
 
+    var artworkImageURL: URL?
+    var artworkNS: Namespace.ID
+
     private var voice: VoiceOption {
         viewModel.currentVoice
     }
@@ -11,14 +14,8 @@ struct TranscriptStageView: View {
     var body: some View {
         VStack(spacing: 12) {
             HStack(alignment: .center, spacing: 12) {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                    .fill(voice.gradient)
-                    .frame(width: 44, height: 44)
-                    .overlay(
-                        Image(systemName: "waveform")
-                            .font(.callout.weight(.bold))
-                            .foregroundStyle(.white)
-                    )
+                artworkThumbnail
+                    .matchedGeometryEffect(id: "artwork-transition", in: artworkNS)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(viewModel.currentItem?.title ?? "Untitled")
@@ -36,6 +33,38 @@ struct TranscriptStageView: View {
             transcriptScroll
                 .padding(.horizontal, 16)
         }
+    }
+
+    private var artworkThumbnail: some View {
+        Group {
+            if let artworkImageURL {
+                AsyncImage(url: artworkImageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                    default:
+                        fallbackThumbnail
+                    }
+                }
+                .frame(width: 44, height: 44)
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+            } else {
+                fallbackThumbnail
+            }
+        }
+    }
+
+    private var fallbackThumbnail: some View {
+        RoundedRectangle(cornerRadius: 10, style: .continuous)
+            .fill(voice.gradient)
+            .frame(width: 44, height: 44)
+            .overlay(
+                Image(systemName: "waveform")
+                    .font(.callout.weight(.bold))
+                    .foregroundStyle(.white)
+            )
     }
 
     private var transcriptScroll: some View {

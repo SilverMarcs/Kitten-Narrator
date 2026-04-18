@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ItemRowView: View {
     let item: NarratorItem
+    var namespace: Namespace.ID
     @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.accent) private var accent
 
@@ -17,20 +18,85 @@ struct ItemRowView: View {
         isCurrentItem && viewModel.audioPlayer.isPlaying
     }
 
+    private var artworkImageURL: URL? {
+        guard let str = item.artworkURL else { return nil }
+        return URL(string: str)
+    }
+
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(alignment: .top, spacing: 14) {
             avatar
-            content
-            Spacer(minLength: 0)
-            trailing
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text(item.title)
+                    .font(.callout.weight(.semibold))
+                    .lineLimit(2)
+                    .foregroundStyle(.primary)
+
+                // Text(item.content)
+                    // .font(.caption)
+                    // .lineLimit(1)
+                    // .foregroundStyle(.secondary)
+
+                bottomRow
+            }
         }
         .contentShape(.rect)
-        .animation(.snappy(duration: 0.25), value: isCurrentItem)
     }
 
     // MARK: - Avatar
 
     private var avatar: some View {
+        ZStack {
+            if let artworkImageURL {
+                AsyncImage(url: artworkImageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                    default:
+                        fallbackAvatar
+                    }
+                }
+            } else {
+                fallbackAvatar
+            }
+
+            if isGenerating || isPlayingNow || isCurrentItem {
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    .fill(
+                        isCurrentItem && artworkImageURL != nil
+                        ? AnyShapeStyle(.black.opacity(0.4))
+                        : AnyShapeStyle(Color.clear)
+                    )
+
+                Group {
+                    if isGenerating {
+                        ProgressView()
+                            .controlSize(.small)
+                            .tint(.white)
+                    } else if isPlayingNow {
+                        Image(systemName: "waveform")
+                            .font(.title3.weight(.semibold))
+                            .foregroundStyle(.white)
+                            .symbolEffect(.variableColor.iterative.reversing,
+                                          options: .repeat(.continuous))
+                    } else if isCurrentItem {
+                        Image(systemName: "pause.fill")
+                            .font(.title3.weight(.bold))
+                            .foregroundStyle(.white)
+                    }
+                }
+            }
+        }
+        .frame(width: 56, height: 56)
+        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .matchedTransitionSource(id: item.id.uuidString, in: namespace)
+    }
+
+    private var fallbackAvatar: some View {
         ZStack {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(
@@ -38,105 +104,58 @@ struct ItemRowView: View {
                     ? AnyShapeStyle(accent.brandGradient)
                     : AnyShapeStyle(accent.opacity(0.18))
                 )
-                .frame(width: 56, height: 56)
+
+            if !isGenerating && !isPlayingNow && !isCurrentItem {
+                Image(systemName: item.sourceIcon)
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(accent)
+            }
+        }
+    }
+
+    // MARK: - Bottom row
+
+    private var bottomRow: some View {
+        HStack(spacing: 0) {
+            durationPill
+
+            Spacer(minLength: 0)
+
+            HStack(spacing: 8) {
+                if item.hasGeneratedAudio {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Text(item.createdAt.formatted(.dateTime.month(.abbreviated).day()))
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    private var durationPill: some View {
+        HStack(spacing: 5) {
+            Image(systemName: isPlayingNow ? "pause.fill" : "play.fill")
+                .font(.caption2.weight(.bold))
+                .foregroundStyle(accent)
 
             Group {
                 if isGenerating {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(isCurrentItem ? .white : accent)
-                } else if isPlayingNow {
-                    Image(systemName: "waveform")
-                        .font(.title3.weight(.semibold))
-                        .foregroundStyle(.white)
-                        .symbolEffect(.variableColor.iterative.reversing,
-                                      options: .repeat(.continuous))
-                } else if isCurrentItem {
-                    Image(systemName: "pause.fill")
-                        .font(.title3.weight(.bold))
-                        .foregroundStyle(.white)
-                } else {
-                    Image(systemName: item.sourceIcon)
-                        .font(.title3.weight(.semibold))
+                    Text("Generating...")
                         .foregroundStyle(accent)
+                } else if item.hasGeneratedAudio {
+                    Text(formatDuration(item.audioDuration))
+                } else {
+                    Text(item.estimatedListenTime)
                 }
             }
+            .font(.caption.weight(.semibold).monospacedDigit())
+            .foregroundStyle(.primary)
         }
-    }
-
-    // MARK: - Content
-
-    private var content: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(item.title)
-                .font(.callout.weight(.semibold))
-                .lineLimit(2)
-                .foregroundStyle(.primary)
-
-            Divider()
-
-            HStack(spacing: 8) {
-                Group {
-                    if isGenerating {
-                        Label("Generating", systemImage: "sparkles")
-                            .foregroundStyle(accent)
-                    } else if item.hasGeneratedAudio {
-                        Label(formatDuration(item.audioDuration), systemImage: "clock")
-                    } else {
-                        Label(item.estimatedListenTime, systemImage: "clock")
-                    }
-                }
-                .labelIconToTitleSpacing(5)
-
-                if item.isCompleted {
-                    Dot()
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.green)
-                }
-            }
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-
-            if item.hasGeneratedAudio && item.progressPercentage > 0.005 && !item.isCompleted {
-                progressBar
-            }
-        }
-    }
-
-    private var progressBar: some View {
-        GeometryReader { geo in
-            Capsule()
-                .fill(.secondary.opacity(0.15))
-                .overlay(alignment: .leading) {
-                    Capsule()
-                        .fill(isCurrentItem ? AnyShapeStyle(accent.brandGradient)
-                                            : AnyShapeStyle(Color.secondary.opacity(0.6)))
-                        .frame(width: geo.size.width * item.progressPercentage)
-                }
-        }
-        .frame(height: 3)
-        .clipShape(Capsule())
-        .padding(.top, 2)
-    }
-
-    // MARK: - Trailing
-
-    @ViewBuilder
-    private var trailing: some View {
-        if !isCurrentItem {
-            VStack(alignment: .trailing, spacing: 4) {
-                Image(systemName: item.hasGeneratedAudio ? "play.circle" : "wand.and.stars")
-                    .font(.title2)
-                    .foregroundStyle(accent.opacity(0.85))
-            }
-        }
-    }
-}
-
-private struct Dot: View {
-    var body: some View {
-        Circle()
-            .fill(.secondary.opacity(0.4))
-            .frame(width: 3, height: 3)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 5)
+        .background(.fill.tertiary, in: Capsule())
     }
 }

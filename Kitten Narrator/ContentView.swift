@@ -5,7 +5,9 @@ struct ContentView: View {
     @Environment(NarratorViewModel.self) private var viewModel
     @Namespace private var playerNS
 
-    private let artworkTransitionID = "now-playing-artwork"
+    private var artworkTransitionID: String {
+        viewModel.currentItem?.id.uuidString ?? "now-playing-artwork"
+    }
 
     var body: some View {
         @Bindable var viewModel = viewModel
@@ -53,10 +55,7 @@ struct ContentView: View {
     @ViewBuilder
     private var nowPlayingSheet: some View {
         let root = NavigationStack {
-            NowPlayingView(
-                namespace: playerNS,
-                artworkID: artworkTransitionID
-            )
+            NowPlayingView(namespace: playerNS, artworkID: artworkTransitionID)
         }
         .tint(viewModel.currentVoice.color)
         .environment(\.accent, viewModel.currentVoice.color)
@@ -70,17 +69,7 @@ struct ContentView: View {
     // MARK: - Main Content
 
     private var mainContent: some View {
-        LibraryView()
-            .safeAreaBar(edge: .bottom) {
-                if viewModel.currentItem != nil {
-                    MiniPlayerView(
-                        namespace: playerNS,
-                        artworkID: artworkTransitionID
-                    )
-                    .padding(.horizontal, 14)
-                    .padding(.bottom, 6)
-                }
-            }
+        LibraryView(namespace: playerNS)
     }
 
     // MARK: - Loading

@@ -2,6 +2,8 @@ import SwiftUI
 import SwiftData
 
 struct LibraryView: View {
+    var namespace: Namespace.ID
+
     @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \NarratorItem.createdAt, order: .reverse) private var items: [NarratorItem]
@@ -134,7 +136,7 @@ struct LibraryView: View {
                 Button {
                     Task { await viewModel.playItem(item) }
                 } label: {
-                    ItemRowView(item: item)
+                    ItemRowView(item: item, namespace: namespace)
                 }
                 .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {

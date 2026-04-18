@@ -9,9 +9,15 @@ struct NowPlayingView: View {
     @Environment(\.accent) private var accent
 
     @State private var showLyrics = true
+    @Namespace private var artworkNS
 
     private var voice: VoiceOption {
         viewModel.currentVoice
+    }
+
+    private var artworkImageURL: URL? {
+        guard let str = viewModel.currentItem?.artworkURL else { return nil }
+        return URL(string: str)
     }
 
     var body: some View {
@@ -19,7 +25,7 @@ struct NowPlayingView: View {
             VStack(spacing: 0) {
                 Group {
                     if showLyrics {
-                        TranscriptStageView()
+                        TranscriptStageView(artworkImageURL: artworkImageURL, artworkNS: artworkNS)
                             .transition(.opacity)
                     } else {
                         artworkStage
@@ -63,7 +69,7 @@ struct NowPlayingView: View {
             Spacer(minLength: 0)
 
             artwork
-                .aspectRatio(1, contentMode: .fit)
+                .matchedGeometryEffect(id: "artwork-transition", in: artworkNS)
                 .frame(maxWidth: 320)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
@@ -75,13 +81,27 @@ struct NowPlayingView: View {
         }
     }
 
+    private let artworkCornerRadius: CGFloat = 28
+
     private var artwork: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(voice.gradient)
-                .shadow(color: voice.color.opacity(0.45), radius: 40, y: 20)
+            if let artworkImageURL {
+                AsyncImage(url: artworkImageURL) { phase in
+                    switch phase {
+                    case .success(let image):
+                        image
+                            .resizable()
+                            .aspectRatio(contentMode: .fill)
+                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
+                    default:
+                        fallbackArtwork
+                    }
+                }
+            } else {
+                fallbackArtwork
+            }
 
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
+            RoundedRectangle(cornerRadius: artworkCornerRadius, style: .continuous)
                 .stroke(
                     LinearGradient(
                         colors: [.white.opacity(0.55), .white.opacity(0.05)],
@@ -100,14 +120,24 @@ struct NowPlayingView: View {
                         .font(.callout.weight(.semibold))
                         .foregroundStyle(.white.opacity(0.9))
                 }
-            } else {
-                Image(systemName: "waveform")
-                    .font(.system(size: 92, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.95))
-                    .symbolEffect(.variableColor.iterative.reversing,
-                                  options: .repeat(.continuous),
-                                  isActive: viewModel.audioPlayer.isPlaying)
             }
+        }
+        .aspectRatio(1, contentMode: .fit)
+        .clipShape(RoundedRectangle(cornerRadius: artworkCornerRadius, style: .continuous))
+        .shadow(color: voice.color.opacity(0.45), radius: 40, y: 20)
+    }
+
+    private var fallbackArtwork: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: artworkCornerRadius, style: .continuous)
+                .fill(voice.gradient)
+
+            Image(systemName: "waveform")
+                .font(.system(size: 92, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.95))
+                .symbolEffect(.variableColor.iterative.reversing,
+                              options: .repeat(.continuous),
+                              isActive: viewModel.audioPlayer.isPlaying)
         }
     }
 

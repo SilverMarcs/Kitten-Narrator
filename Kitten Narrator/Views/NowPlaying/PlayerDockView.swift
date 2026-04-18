@@ -18,21 +18,19 @@ struct PlayerDockView: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            if !viewModel.audioPlayer.isStreamingGeneration {
-                progressSection
-                    .transition(.opacity)
-            }
-            
+            progressSection
+                .opacity(viewModel.audioPlayer.isStreamingGeneration ? 0 : 1)
+                .animation(.default, value: viewModel.audioPlayer.isStreamingGeneration)
+
             controlsSection
-            
+
             Spacer(minLength: 0)
-    
+
             Color.clear
                 .frame(height: 7.5)
-        
+
             actionRow
         }
-        .animation(.smooth, value: viewModel.audioPlayer.isStreamingGeneration)
     }
 
     // MARK: - Progress
@@ -157,7 +155,7 @@ struct PlayerDockView: View {
 
     private var transcriptChip: some View {
         Button {
-            withAnimation(.smooth) { showLyrics.toggle() }
+            withAnimation { showLyrics.toggle() }
         } label: {
             Image(systemName: "quote.bubble")
                 .font(.footnote.weight(.bold))
