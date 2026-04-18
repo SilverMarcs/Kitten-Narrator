@@ -22,7 +22,14 @@ struct PlayerDockView: View {
                 progressSection
                     .transition(.opacity)
             }
+            
             controlsSection
+            
+            Spacer(minLength: 0)
+    
+            Color.clear
+                .frame(height: 7.5)
+        
             actionRow
         }
         .animation(.smooth, value: viewModel.audioPlayer.isStreamingGeneration)
@@ -116,8 +123,9 @@ struct PlayerDockView: View {
         .overlay {
             transcriptChip
         }
-        .frame(maxWidth: 460)
+        .frame(maxWidth: 400)
         .frame(maxWidth: .infinity)
+        .padding(.horizontal, 10)
     }
 
     private var speedChip: some View {

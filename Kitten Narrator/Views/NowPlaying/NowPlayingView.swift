@@ -15,18 +15,24 @@ struct NowPlayingView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            if showLyrics {
-                TranscriptStageView()
-                    .transition(.opacity)
-            } else {
-                artworkStage
-                    .transition(.opacity)
-            }
+        GeometryReader { geo in
+            VStack(spacing: 0) {
+                Group {
+                    if showLyrics {
+                        TranscriptStageView()
+                            .transition(.opacity)
+                    } else {
+                        artworkStage
+                            .transition(.opacity)
+                    }
+                }
+                .frame(height: geo.size.height * 0.7)
 
-            PlayerDockView(showLyrics: $showLyrics)
-                .padding(.horizontal, 24)
-                .padding(.bottom, 16)
+                PlayerDockView(showLyrics: $showLyrics)
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 16)
+                    .frame(height: geo.size.height * 0.3, alignment: .top)
+            }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             dragHandle
@@ -45,7 +51,7 @@ struct NowPlayingView: View {
     private var dragHandle: some View {
         Capsule()
             .fill(.secondary.opacity(0.4))
-            .frame(width: 40, height: 5)
+            .frame(width: 50, height: 5)
             .frame(maxWidth: .infinity)
             .accessibilityHidden(true)
     }
@@ -58,7 +64,7 @@ struct NowPlayingView: View {
 
             artwork
                 .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: 280)
+                .frame(maxWidth: 320)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
 
