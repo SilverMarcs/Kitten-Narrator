@@ -137,6 +137,7 @@ private struct VoiceCard: View {
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(.rect)
             .padding(14)
         }
         .buttonStyle(.plain)

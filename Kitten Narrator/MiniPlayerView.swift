@@ -97,8 +97,7 @@ struct MiniPlayerView: View {
             .padding(.horizontal, 12)
             .padding(.bottom, 8)
         }
-        .glassEffect(.regular.interactive(), in: .rect(cornerRadius: 22))
-        .accessibilityElement(children: .contain)
+        .glassEffect(in: .rect(cornerRadius: 22))
     }
 
     // MARK: - Artwork tile

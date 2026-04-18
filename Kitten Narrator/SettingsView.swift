@@ -4,32 +4,34 @@ struct SettingsView: View {
     @Bindable var viewModel: NarratorViewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: 22) {
+            Form {
+                Section {
                     heroSection
-                        .padding(.horizontal, 20)
-
-                    sectionLabel("Default voice")
-                    voiceNavigationRow
-                        .padding(.horizontal, 20)
-
-                    sectionLabel("Default speed")
-                    speedSlider
-                        .padding(.horizontal, 20)
-
-                    sectionLabel("About")
-                    aboutCard
-                        .padding(.horizontal, 20)
-
-                    Color.clear.frame(height: 20)
                 }
-                .padding(.top, 8)
-                .frame(maxWidth: 640)
-                .frame(maxWidth: .infinity)
+                .listRowBackground(sectionBackground)
+
+                Section("Default voice") {
+                    voiceNavigationRow
+                }
+                .listRowBackground(sectionBackground)
+
+                Section("Default speed") {
+                    speedSlider
+                }
+                .listRowBackground(sectionBackground)
+
+                Section("About") {
+                    aboutCard
+                }
+                .listRowBackground(sectionBackground)
             }
+            .formStyle(.grouped)
+            .contentMargins(.top, 15)
+            .scrollContentBackground(.hidden)
             .scrollIndicators(.hidden)
             .background(
                 LinearGradient(
@@ -40,11 +42,9 @@ struct SettingsView: View {
                 .ignoresSafeArea()
             )
             .navigationTitle("Settings")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
+                ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
                 }
             }
@@ -82,67 +82,34 @@ struct SettingsView: View {
     // MARK: - Voice navigation (uses a plain NavigationLink so the tap is reliable)
 
     private var voiceNavigationRow: some View {
-        NavigationLink {
+        let voice = viewModel.currentVoice
+        return NavigationLink {
             VoicePickerView(selectedVoice: $viewModel.selectedVoice)
         } label: {
-            voiceRowContent
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var voiceRowContent: some View {
-        let voice = viewModel.currentVoice
-        return HStack(spacing: 14) {
-            ZStack {
-                Circle()
-                    .fill(voice.gradient)
-                    .frame(width: 46, height: 46)
-                Text(voice.monogram)
-                    .font(.headline.weight(.bold))
-                    .foregroundStyle(.white)
-            }
-
-            VStack(alignment: .leading, spacing: 2) {
+            Label {
+                Group {
                 Text(voice.displayName)
-                    .font(.callout.weight(.semibold))
                 Text(voice.subtitle)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                }
+                .padding(.leading, 5)
+            } icon: {
+               Circle()
+                .fill(voice.gradient)
+                .frame(width: 46, height: 46)
+                .overlay {
+                    Text(voice.monogram)
+                        .font(.headline.weight(.bold))
+                        .foregroundStyle(.white)
+                }
             }
-
-            Spacer(minLength: 0)
-
-            Image(systemName: "chevron.right")
-                .font(.footnote.weight(.bold))
-                .foregroundStyle(.secondary)
+            .padding(.leading)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        )
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     // MARK: - Speed slider
 
     private var speedSlider: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .firstTextBaseline) {
-                Text("Playback speed")
-                    .font(.subheadline.weight(.semibold))
-                Spacer()
-                Text(formatSpeed(Double(viewModel.playbackSpeed)))
-                    .font(.title3.weight(.bold).monospacedDigit())
-                    .foregroundStyle(accent)
-                    .contentTransition(.numericText())
-            }
-
+        VStack(spacing: 6) {
             Slider(
                 value: Binding(
                     get: { Double(viewModel.playbackSpeed) },
@@ -152,41 +119,18 @@ struct SettingsView: View {
                 step: 0.25
             ) {
                 Text("Playback speed")
-            } minimumValueLabel: {
-                Text("0.5×")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
-            } maximumValueLabel: {
-                Text("2×")
-                    .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
             }
             .tint(accent)
 
-            // Tick marks, just for a visual anchor
             HStack {
-                ForEach(Array(stride(from: 0.5, through: 2.0, by: 0.25)), id: \.self) { v in
+                ForEach(Array(stride(from: 0.5, through: 2.0, by: 0.5)), id: \.self) { v in
                     Text(formatSpeed(v))
                         .font(.caption2.weight(.medium).monospacedDigit())
-                        .foregroundStyle(
-                            abs(Double(viewModel.playbackSpeed) - v) < 0.01
-                            ? accent
-                            : .secondary.opacity(0.7)
-                        )
-                        .frame(maxWidth: .infinity)
+                        .foregroundStyle(.secondary)
+                    if v < 2.0 { Spacer(minLength: 0) }
                 }
             }
-            .padding(.horizontal, 4)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        )
     }
 
     // MARK: - About
@@ -207,26 +151,13 @@ struct SettingsView: View {
                 .foregroundStyle(.secondary)
                 .lineSpacing(1)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.ultraThinMaterial)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(.white.opacity(0.08), lineWidth: 1)
-        )
     }
 
     // MARK: - Helpers
 
-    private func sectionLabel(_ title: String) -> some View {
-        Text(title)
-            .font(.caption.weight(.bold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-            .padding(.horizontal, 24)
-            .padding(.top, 4)
+    private var sectionBackground: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.06)
+            : Color.black.opacity(0.04)
     }
 }

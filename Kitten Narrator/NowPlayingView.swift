@@ -24,102 +24,50 @@ struct NowPlayingView: View {
     }
 
     var body: some View {
-        ZStack {
+        VStack(spacing: 0) {
+            if showLyrics {
+                transcriptStage
+                    .transition(.opacity)
+            } else {
+                artworkStage
+                    .transition(.opacity)
+            }
+
+            playerDock
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+        }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            dragHandle
+                .padding(.top, 6)
+                .padding(.bottom, 4)
+        }
+        .background {
             VoiceBackdrop(color: voice.color)
                 .ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                topBar
-                    .padding(.horizontal, 16)
-                    .padding(.top, 6)
-
-                // Middle area: artwork or transcript.
-                ZStack {
-                    if showLyrics {
-                        transcriptStage
-                            .transition(.opacity)
-                    } else {
-                        artworkStage
-                            .transition(.opacity)
-                    }
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                playerDock
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 16)
-            }
-            .frame(maxWidth: 560)
-            .frame(maxWidth: .infinity)
         }
-        #if os(iOS)
-        .toolbar(.hidden, for: .navigationBar)
-        #endif
         .onDisappear { viewModel.saveCurrentPosition() }
     }
 
-    // MARK: - Top bar (drag handle + ellipsis, no close)
+    // MARK: - Drag handle
 
-    private var topBar: some View {
-        ZStack {
-            // Centered custom drag handle
-            Capsule()
-                .fill(.secondary.opacity(0.4))
-                .frame(width: 40, height: 5)
-                .accessibilityHidden(true)
-
-            HStack {
-                Spacer(minLength: 0)
-
-                Menu {
-                    Button {
-                        withAnimation(.smooth) { showLyrics.toggle() }
-                    } label: {
-                        Label(showLyrics ? "Hide transcript" : "Show transcript",
-                              systemImage: "text.quote")
-                    }
-
-                    if viewModel.currentItem?.hasGeneratedAudio == true && !viewModel.isGenerating {
-                        Button {
-                            Task { await viewModel.regenerateCurrentItem() }
-                        } label: {
-                            Label("Regenerate audio", systemImage: "arrow.clockwise")
-                        }
-                    }
-
-                    if viewModel.currentItem != nil {
-                        Divider()
-                        Button(role: .destructive) {
-                            viewModel.stop()
-                            dismiss()
-                        } label: {
-                            Label("Stop playback", systemImage: "stop.circle")
-                        }
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.primary)
-                        .frame(width: 38, height: 38)
-                        .contentShape(Circle())
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: .circle)
-                .accessibilityLabel("More")
-            }
-        }
-        .frame(height: 44)
+    private var dragHandle: some View {
+        Capsule()
+            .fill(.secondary.opacity(0.4))
+            .frame(width: 40, height: 5)
+            .frame(maxWidth: .infinity)
+            .accessibilityHidden(true)
     }
 
     // MARK: - Artwork stage
 
     private var artworkStage: some View {
-        VStack(spacing: 24) {
+        VStack(spacing: 16) {
             Spacer(minLength: 0)
 
             artwork
                 .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: 320)
+                .frame(maxWidth: 280)
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, 28)
 
@@ -263,7 +211,7 @@ struct NowPlayingView: View {
     // MARK: - Dock
 
     private var playerDock: some View {
-        VStack(spacing: 20) {
+        VStack(spacing: 14) {
             if !viewModel.audioPlayer.isStreamingGeneration {
                 progressSection
                     .transition(.opacity)
@@ -305,7 +253,6 @@ struct NowPlayingView: View {
         }
     }
 
-    // Liquid-glass skip circles + accent-gradient play button.
     private var controlsSection: some View {
         GlassEffectContainer(spacing: 18) {
             HStack(spacing: 18) {
@@ -316,20 +263,13 @@ struct NowPlayingView: View {
                 Button {
                     viewModel.togglePlayPause()
                 } label: {
-                    ZStack {
-                        Circle()
-                            .fill(accent.brandGradient)
-                            .frame(width: 84, height: 84)
-                            .shadow(color: accent.opacity(0.45), radius: 20, y: 8)
-
                         Image(systemName: viewModel.audioPlayer.isPlaying ? "pause.fill" : "play.fill")
                             .font(.system(size: 34, weight: .bold))
-                            .foregroundStyle(.white)
                             .contentTransition(.symbolEffect(.replace.downUp))
-                            .offset(x: viewModel.audioPlayer.isPlaying ? 0 : 3)
-                    }
+                            .padding(15)
                 }
-                .buttonStyle(.plain)
+                .buttonBorderShape(.circle)
+                .buttonStyle(.glassProminent)
                 .disabled(viewModel.isGenerating)
                 .accessibilityLabel(viewModel.audioPlayer.isPlaying ? "Pause" : "Play")
 

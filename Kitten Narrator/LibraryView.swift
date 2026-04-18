@@ -7,6 +7,7 @@ struct LibraryView: View {
     var viewModel: NarratorViewModel
 
     @Environment(\.accent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
 
     @State private var searchText = ""
     @State private var filter: LibraryFilter = .all
@@ -91,10 +92,8 @@ struct LibraryView: View {
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView(viewModel: viewModel)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.hidden)
             }
-            .safeAreaInset(edge: .top, spacing: 0) {
+            .safeAreaBar(edge: .top, spacing: 0) {
                 if !items.isEmpty {
                     filterBar
                         .padding(.horizontal, 16)
@@ -246,9 +245,6 @@ struct LibraryView: View {
                     ItemRowView(item: item, viewModel: viewModel)
                 }
                 .buttonStyle(.plain)
-                .listRowSeparator(.hidden)
-                .listRowBackground(Color.clear)
-                .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
                     Button(role: .destructive) {
                         deleteItem(item)
@@ -307,9 +303,15 @@ struct LibraryView: View {
                     }
                 }
             }
+            .listRowBackground(sectionBackground)
         }
-        .listStyle(.plain)
         .scrollContentBackground(.hidden)
+    }
+    
+    private var sectionBackground: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.1)
+            : Color.black.opacity(0.04)
     }
 
     // MARK: - Actions

@@ -25,27 +25,8 @@ struct ItemRowView: View {
             Spacer(minLength: 0)
             trailing
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .opacity(isCurrentItem ? 1 : 0.55)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(
-                    isCurrentItem
-                    ? LinearGradient(colors: [accent.opacity(0.9), accent.opacity(0.35)],
-                                     startPoint: .topLeading,
-                                     endPoint: .bottomTrailing)
-                    : LinearGradient(colors: [.white.opacity(0.12), .white.opacity(0.02)],
-                                     startPoint: .topLeading,
-                                     endPoint: .bottomTrailing),
-                    lineWidth: isCurrentItem ? 1.5 : 0.5
-                )
-        )
+        .contentShape(.rect)
         .animation(.snappy(duration: 0.25), value: isCurrentItem)
-        .contentShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 
     // MARK: - Avatar
@@ -92,25 +73,25 @@ struct ItemRowView: View {
                 .font(.callout.weight(.semibold))
                 .lineLimit(2)
                 .foregroundStyle(.primary)
+            
+            Divider()
 
             HStack(spacing: 8) {
-                if isGenerating {
-                    Label("Generating", systemImage: "sparkles")
-                        .foregroundStyle(accent)
-                } else if item.hasGeneratedAudio {
-                    Label(formatDuration(item.audioDuration), systemImage: "clock")
-                } else {
-                    Label(item.estimatedListenTime, systemImage: "clock")
+                Group {
+                    if isGenerating {
+                        Label("Generating", systemImage: "sparkles")
+                            .foregroundStyle(accent)
+                    } else if item.hasGeneratedAudio {
+                        Label(formatDuration(item.audioDuration), systemImage: "clock")
+                    } else {
+                        Label(item.estimatedListenTime, systemImage: "clock")
+                    }
                 }
-
-                Dot()
-
-                Text(item.createdAt, format: .relative(presentation: .named))
-                    .lineLimit(1)
+                .labelIconToTitleSpacing(5)
 
                 if item.isCompleted {
                     Dot()
-                    Image(systemName: "checkmark.seal.fill")
+                    Image(systemName: "checkmark.circle.fill")
                         .foregroundStyle(.green)
                 }
             }

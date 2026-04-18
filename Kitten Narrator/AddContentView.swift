@@ -5,6 +5,7 @@ struct AddContentView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
+    @Environment(\.colorScheme) private var colorScheme
 
     enum Source: String, CaseIterable, Identifiable {
         case text, url
@@ -25,60 +26,59 @@ struct AddContentView: View {
 
     var body: some View {
         NavigationStack {
-            ZStack(alignment: .bottom) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 18) {
-                        header
-
-                        Picker("Source", selection: $source) {
-                            ForEach(Source.allCases) { s in
-                                Text(s.title).tag(s)
-                            }
-                        }
-                        .pickerStyle(.segmented)
-                        .onChange(of: source) {
-                            errorMessage = nil
-                        }
-
-                        Group {
-                            if source == .text {
-                                textSection
-                            } else {
-                                urlSection
-                            }
-                        }
-                        .transition(.opacity)
-
-                        if let error = errorMessage {
-                            errorBanner(error)
-                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
-                        }
-
-                        Color.clear.frame(height: 110)
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 8)
-                    .frame(maxWidth: 640)
-                    .frame(maxWidth: .infinity)
+            Form {
+                Section {
+                    header
                 }
-                .scrollIndicators(.hidden)
-                .animation(.snappy(duration: 0.25), value: source)
-                .animation(.snappy(duration: 0.25), value: errorMessage)
+                .listRowBackground(sectionBackground)
 
-                primaryAction
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 12)
-                    .frame(maxWidth: 640)
-                    .frame(maxWidth: .infinity)
+                Section {
+                    Picker("Source", selection: $source) {
+                        ForEach(Source.allCases) { s in
+                            Text(s.title).tag(s)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .controlSize(.extraLarge)
+                    .onChange(of: source) {
+                        errorMessage = nil
+                    }
+                }
+                .listSectionMargins(.horizontal, 0)
+                .listSectionSeparator(.hidden)
+                .listRowBackground(Color.clear)
+                .listSectionSpacing(.compact)
+
+                if source == .text {
+                    textSection
+                } else {
+                    urlSection
+                }
+
+                if let error = errorMessage {
+                    Section {
+                        errorBanner(error)
+                    }
+                    .listRowBackground(sectionBackground)
+                    .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                }
             }
+            .formStyle(.grouped)
+            .contentMargins(.top, 15)
+            .scrollContentBackground(.hidden)
+            .scrollIndicators(.hidden)
             .background(bgTint.ignoresSafeArea())
             .navigationTitle("New Narration")
-            #if os(iOS)
-            .navigationBarTitleDisplayMode(.inline)
-            #endif
+            .toolbarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
+                        .tint(accent)
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(role: .confirm) { addItem() }
+                        .tint(accent)
+                        .disabled(!canAdd)
                 }
             }
         }
@@ -100,12 +100,12 @@ struct AddContentView: View {
                     .contentTransition(.symbolEffect(.replace))
             }
 
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text(source == .text ? "Paste or type some text" : "Drop in a web link")
                     .font(.headline)
                 Text(source == .text
-                     ? "Narrator will turn it into audio you can listen to anywhere."
-                     : "We'll extract the readable article for you.")
+                     ? "Narrator will turn it magically into audio to listen offline."
+                     : "We'll extract the readable article for you from your desired article")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -118,171 +118,75 @@ struct AddContentView: View {
 
     @ViewBuilder
     private var textSection: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                labeledField("Title") {
-                    TextField("Optional title", text: $textTitle)
-                        .focused($focusedField, equals: .title)
-                        .textFieldStyle(.plain)
-                        .submitLabel(.next)
-                        .onSubmit { focusedField = .content }
-                }
-            }
+        Section("Title") {
+            TextField("Optional title", text: $textTitle)
+                .focused($focusedField, equals: .title)
+                .submitLabel(.next)
+                .onSubmit { focusedField = .content }
         }
+        .listRowBackground(sectionBackground)
 
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Content")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
-
-                    Spacer()
-
-                    if !textContent.isEmpty {
-                        Text("\(textContent.split(separator: " ").count) words · \(estimatedTime) min")
-                            .font(.caption.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .contentTransition(.numericText())
-                    }
-                }
-
-                ZStack(alignment: .topLeading) {
-                    TextEditor(text: $textContent)
-                        .focused($focusedField, equals: .content)
-                        .frame(minHeight: 200)
-                        .scrollContentBackground(.hidden)
-
+        Section {
+            TextEditor(text: $textContent)
+                .focused($focusedField, equals: .content)
+                .frame(minHeight: 150)
+                .scrollContentBackground(.hidden)
+                .overlay(alignment: .topLeading) {
                     if textContent.isEmpty {
                         Text("Paste or write what you'd like narrated…")
-                            .foregroundStyle(.secondary.opacity(0.6))
+                            .foregroundStyle(.tertiary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
                             .allowsHitTesting(false)
                     }
                 }
+        } header: {
+            Text("Content")
+        } footer: {
+            if !textContent.isEmpty {
+                Text("\(textContent.split(separator: " ").count) words")
             }
         }
-
-        pasteButton
+        .listRowBackground(sectionBackground)
     }
-
-    private var pasteButton: some View {
-        #if os(iOS) || os(macOS)
-        PasteButton(payloadType: String.self) { strings in
-            guard let text = strings.first, !text.isEmpty else { return }
-            Task { @MainActor in
-                textContent = text
-                if textTitle.isEmpty {
-                    textTitle = String(text.prefix(60))
-                        .trimmingCharacters(in: .whitespacesAndNewlines)
-                }
-                focusedField = .content
-            }
-        }
-        .tint(accent)
-        .buttonBorderShape(.capsule)
-        .labelStyle(.titleAndIcon)
-        #else
-        EmptyView()
-        #endif
-    }
-
     // MARK: - URL
 
     @ViewBuilder
     private var urlSection: some View {
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                labeledField("URL") {
-                    TextField("https://example.com/article", text: $urlString)
-                        .focused($focusedField, equals: .url)
-                        .textFieldStyle(.plain)
-                        #if os(iOS)
-                        .keyboardType(.URL)
-                        .textInputAutocapitalization(.never)
-                        #endif
-                        .autocorrectionDisabled()
-                        .textContentType(.URL)
-                        .submitLabel(.go)
-                        .onSubmit { if canAdd { addItem() } }
+        Section {
+            TextField("Paste URL here", text: $urlString)
+                .focused($focusedField, equals: .url)
+                #if os(iOS)
+                .keyboardType(.URL)
+                .textInputAutocapitalization(.never)
+                #endif
+                .autocorrectionDisabled()
+                .textContentType(.URL)
+                .submitLabel(.go)
+                .onSubmit { if canAdd { addItem() } }
+                .overlay(alignment: .trailing) {
+                    if isLoadingURL {
+                        ProgressView().controlSize(.small)
+                    }
                 }
-            }
+        } header: {
+            Text("URL")
+        } footer: {
+            Text("Narrator downloads the page, extracts the main article, and creates an offline audio version")
         }
-
-        if isLoadingURL {
-            HStack(spacing: 10) {
-                ProgressView().controlSize(.small).tint(accent)
-                Text("Fetching article…")
-                    .font(.footnote.weight(.medium))
-                    .foregroundStyle(.secondary)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .glassEffect(.regular, in: .rect(cornerRadius: 14))
-        }
-
-        Card {
-            VStack(alignment: .leading, spacing: 8) {
-                Label("How it works", systemImage: "sparkles")
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(accent)
-
-                Text("Narrator downloads the page, extracts the main article, and creates an offline audio version you can listen to anywhere.")
-                    .font(.footnote)
-                    .foregroundStyle(.secondary)
-                    .lineSpacing(1)
-            }
-        }
+        .listRowBackground(sectionBackground)
     }
 
     // MARK: - Error banner
 
     private func errorBanner(_ message: String) -> some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .font(.callout)
-                .foregroundStyle(.red)
-
+        Label {
             Text(message)
                 .font(.footnote.weight(.medium))
-                .foregroundStyle(.primary)
-
-            Spacer(minLength: 0)
+        } icon: {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.red)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .glassEffect(.regular.tint(.red.opacity(0.25)), in: .rect(cornerRadius: 14))
-    }
-
-    // MARK: - Primary action
-
-    private var primaryAction: some View {
-        Button {
-            addItem()
-        } label: {
-            HStack(spacing: 8) {
-                if isLoadingURL {
-                    ProgressView()
-                        .controlSize(.small)
-                        .tint(.white)
-                } else {
-                    Image(systemName: source == .text ? "plus.circle.fill" : "arrow.down.circle.fill")
-                        .font(.body.weight(.bold))
-                }
-                Text(source == .text ? "Add to Library" : "Fetch Article")
-                    .font(.callout.weight(.bold))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 6)
-        }
-        .buttonStyle(.glassProminent)
-        .tint(accent)
-        .controlSize(.extraLarge)
-        .disabled(!canAdd)
-        .opacity(canAdd ? 1 : 0.55)
-        .animation(.snappy, value: canAdd)
     }
 
     // MARK: - Helpers
@@ -295,12 +199,6 @@ struct AddContentView: View {
         }
     }
 
-    private var estimatedTime: String {
-        let words = textContent.split(separator: " ").count
-        let minutes = Double(words) / 150.0
-        return minutes < 1 ? "<1" : String(Int(ceil(minutes)))
-    }
-
     private var bgTint: some View {
         LinearGradient(
             colors: [accent.opacity(0.10), .clear],
@@ -309,14 +207,10 @@ struct AddContentView: View {
         )
     }
 
-    @ViewBuilder
-    private func labeledField<Content: View>(_ label: String, @ViewBuilder content: () -> Content) -> some View {
-        Text(label)
-            .font(.caption.weight(.semibold))
-            .foregroundStyle(.secondary)
-            .textCase(.uppercase)
-        content()
-            .font(.body)
+    private var sectionBackground: Color {
+        colorScheme == .dark
+            ? Color.white.opacity(0.06)
+            : Color.black.opacity(0.04)
     }
 
     // MARK: - Actions
@@ -381,20 +275,5 @@ struct AddContentView: View {
                 isLoadingURL = false
             }
         }
-    }
-}
-
-// MARK: - Card wrapper
-
-private struct Card<Content: View>: View {
-    @ViewBuilder var content: () -> Content
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            content()
-        }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .glassEffect(.regular, in: .rect(cornerRadius: 16))
     }
 }

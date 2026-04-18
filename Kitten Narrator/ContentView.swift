@@ -38,8 +38,10 @@ struct ContentView: View {
             AddContentView()
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
+                .tint(viewModel.currentVoice.color)
+                .environment(\.accent, viewModel.currentVoice.color)
         }
-        .sheet(isPresented: $viewModel.showNowPlaying) {
+        .fullScreenCover(isPresented: $viewModel.showNowPlaying) {
             nowPlayingSheet
         }
         .onChange(of: viewModel.audioPlayer.isPlaying) {
@@ -58,10 +60,6 @@ struct ContentView: View {
         }
         .tint(viewModel.currentVoice.color)
         .environment(\.accent, viewModel.currentVoice.color)
-        .presentationDetents([.large])
-        .presentationDragIndicator(.hidden)
-        .presentationBackground(Color.appBackground)
-
         #if os(iOS)
         root.navigationTransition(.zoom(sourceID: artworkTransitionID, in: playerNS))
         #else
@@ -72,23 +70,19 @@ struct ContentView: View {
     // MARK: - Main Content
 
     private var mainContent: some View {
-        ZStack(alignment: .bottom) {
-            LibraryView(viewModel: viewModel)
-                .safeAreaPadding(.bottom, viewModel.currentItem != nil ? 84 : 0)
-
-            if viewModel.currentItem != nil {
-                MiniPlayerView(
-                    viewModel: viewModel,
-                    namespace: playerNS,
-                    artworkID: artworkTransitionID,
-                    onTap: { viewModel.showNowPlaying = true }
-                )
-                .padding(.horizontal, 14)
-                .padding(.bottom, 6)
-                .transition(.move(edge: .bottom).combined(with: .opacity))
+        LibraryView(viewModel: viewModel)
+            .safeAreaBar(edge: .bottom) {
+                if viewModel.currentItem != nil {
+                    MiniPlayerView(
+                        viewModel: viewModel,
+                        namespace: playerNS,
+                        artworkID: artworkTransitionID,
+                        onTap: { viewModel.showNowPlaying = true }
+                    )
+                    .padding(.horizontal, 14)
+                    .padding(.bottom, 6)
+                }
             }
-        }
-        .animation(.snappy(duration: 0.35), value: viewModel.currentItem?.id)
     }
 
     // MARK: - Loading
@@ -120,39 +114,7 @@ struct ContentView: View {
     // MARK: - Error
 
     private func errorView(_ message: String) -> some View {
-        ZStack {
-            AuroraBackground()
-                .ignoresSafeArea()
-
-            VStack(spacing: 24) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .font(.system(size: 60))
-                    .foregroundStyle(.orange.gradient)
-
-                VStack(spacing: 8) {
-                    Text("Setup hit a snag")
-                        .font(.title2.bold())
-                    Text(message)
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                }
-                .padding(.horizontal, 28)
-
-                Button {
-                    Task { await viewModel.initialize() }
-                } label: {
-                    Label("Try again", systemImage: "arrow.clockwise")
-                        .font(.callout.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 4)
-                }
-                .buttonStyle(.glassProminent)
-                .tint(Brand.primary)
-                .controlSize(.large)
-            }
-            .padding(24)
-        }
+        Text("Unknown Error")
     }
 }
 
