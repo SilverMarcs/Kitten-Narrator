@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Reeeed
 
 struct AddContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -250,23 +251,21 @@ struct AddContentView: View {
 
         Task {
             do {
-                let (data, _) = try await URLSession.shared.data(from: url)
-                let html = String(data: data, encoding: .utf8) ?? String(data: data, encoding: .ascii) ?? ""
-                let extracted = TextExtractor.extractFromHTML(html)
-
-                let content = extracted.content
+                let doc = try await Reeeed.fetchAndExtractContent(fromURL: url)
+                let content = doc.extracted.extractPlainText
                 guard !content.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                     errorMessage = "We couldn't find any readable text at this URL."
                     isLoadingURL = false
                     return
                 }
 
-                let title = extracted.title ?? url.host ?? "Web Article"
+                let title = doc.title ?? url.host ?? "Web Article"
                 let item = NarratorItem(
                     title: title,
                     content: content,
                     sourceType: "url",
-                    sourceURL: urlText
+                    sourceURL: urlText,
+                    artworkURL: doc.metadata.heroImage?.absoluteString
                 )
                 modelContext.insert(item)
                 isLoadingURL = false

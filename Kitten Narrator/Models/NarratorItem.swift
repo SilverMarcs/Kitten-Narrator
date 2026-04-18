@@ -8,6 +8,7 @@ final class NarratorItem {
     var content: String = ""
     var sourceType: String = "text"
     var sourceURL: String?
+    var artworkURL: String?
     var createdAt: Date = Date()
     var isCompleted: Bool = false
     var playbackPosition: Double = 0
@@ -15,12 +16,13 @@ final class NarratorItem {
     var voiceIdentifier: String = "bella"
     var speed: Float = 1.0
 
-    init(title: String, content: String, sourceType: String = "text", sourceURL: String? = nil) {
+    init(title: String, content: String, sourceType: String = "text", sourceURL: String? = nil, artworkURL: String? = nil) {
         self.id = UUID()
         self.title = title
         self.content = content
         self.sourceType = sourceType
         self.sourceURL = sourceURL
+        self.artworkURL = artworkURL
         self.createdAt = Date()
     }
 

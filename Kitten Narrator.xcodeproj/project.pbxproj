@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		0854230E2F902008007A1377 /* KittenTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 0854230D2F902008007A1377 /* KittenTTS */; };
+		085423122F9A0003007A1377 /* Reeeed in Frameworks */ = {isa = PBXBuildFile; productRef = 085423112F9A0002007A1377 /* Reeeed */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				0854230E2F902008007A1377 /* KittenTTS in Frameworks */,
+				085423122F9A0003007A1377 /* Reeeed in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -71,6 +73,7 @@
 			name = "Kitten Narrator";
 			packageProductDependencies = (
 				0854230D2F902008007A1377 /* KittenTTS */,
+				085423112F9A0002007A1377 /* Reeeed */,
 			);
 			productName = "Kitten Narrator";
 			productReference = 085422FC2F901F45007A1377 /* Kitten Narrator.app */;
@@ -102,6 +105,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				0854230C2F902008007A1377 /* XCRemoteSwiftPackageReference "KittenTTS-swift" */,
+				085423102F9A0001007A1377 /* XCRemoteSwiftPackageReference "reeeed" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = 085422FD2F901F45007A1377 /* Products */;
@@ -260,22 +264,23 @@
 				DEVELOPMENT_TEAM = J52QUTREBS;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -294,7 +299,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.4;
-				ENABLE_OUTGOING_CONNECTIONS = YES;
 			};
 			name = Debug;
 		};
@@ -308,22 +312,23 @@
 				DEVELOPMENT_TEAM = J52QUTREBS;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_OUTGOING_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
+				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphoneos*]" = audio;
-				"INFOPLIST_KEY_UIBackgroundModes[sdk=iphonesimulator*]" = audio;
-				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -342,7 +347,6 @@
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
 				XROS_DEPLOYMENT_TARGET = 26.4;
-				ENABLE_OUTGOING_CONNECTIONS = YES;
 			};
 			name = Release;
 		};
@@ -374,7 +378,15 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/SilverMarcs/KittenTTS-swift.git";
 			requirement = {
-				branch = "feature/combined";
+				branch = feature/combined;
+				kind = branch;
+			};
+		};
+		085423102F9A0001007A1377 /* XCRemoteSwiftPackageReference "reeeed" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/SilverMarcs/reeeed";
+			requirement = {
+				branch = main;
 				kind = branch;
 			};
 		};
@@ -385,6 +397,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = 0854230C2F902008007A1377 /* XCRemoteSwiftPackageReference "KittenTTS-swift" */;
 			productName = KittenTTS;
+		};
+		085423112F9A0002007A1377 /* Reeeed */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = 085423102F9A0001007A1377 /* XCRemoteSwiftPackageReference "reeeed" */;
+			productName = Reeeed;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

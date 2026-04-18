@@ -98,7 +98,7 @@ final class NarratorViewModel {
                 startPosition: item.playbackPosition,
                 rate: playbackSpeed
             )
-            audioPlayer.updateNowPlayingInfo(title: item.title)
+            audioPlayer.updateNowPlayingInfo(title: item.title, artworkURL: item.artworkURL.flatMap(URL.init(string:)))
         } catch {
             print("Playback error: \(error)")
         }
@@ -121,7 +121,7 @@ final class NarratorViewModel {
             var cumulativeAudioTime: Double = 0
 
             try audioPlayer.beginStreaming(sampleRate: 24_000)
-            audioPlayer.updateNowPlayingInfo(title: item.title)
+            audioPlayer.updateNowPlayingInfo(title: item.title, artworkURL: item.artworkURL.flatMap(URL.init(string:)))
 
             var firstChunk = true
             let stream = tts.generateStreaming(item.content, voice: voice, speed: playbackSpeed)

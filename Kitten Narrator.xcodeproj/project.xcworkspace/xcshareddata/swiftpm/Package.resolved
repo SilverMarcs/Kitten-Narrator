@@ -1,6 +1,15 @@
 {
-  "originHash" : "0d39f614f87f54f5adb6097165dd427c07fd9667ba5bc30f5cd8c6100959ff7f",
+  "originHash" : "424541a8cb5cb6a1722c432320896bb715dbf0fc871a07ab29c844ed007c6603",
   "pins" : [
+    {
+      "identity" : "fuzi",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/cezheng/Fuzi",
+      "state" : {
+        "revision" : "f08c8323da21e985f3772610753bcfc652c2103f",
+        "version" : "3.1.3"
+      }
+    },
     {
       "identity" : "kittentts-swift",
       "kind" : "remoteSourceControl",
@@ -17,6 +26,15 @@
       "state" : {
         "revision" : "b7fb7f7dea8a2469e6335d95a61b8f36d0dc83b2",
         "version" : "1.24.2"
+      }
+    },
+    {
+      "identity" : "reeeed",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SilverMarcs/reeeed",
+      "state" : {
+        "branch" : "main",
+        "revision" : "5a7bd52e8f17f63120b119a6e9d6b7f8c389d7fc"
       }
     }
   ],
