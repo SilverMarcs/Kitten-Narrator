@@ -1,9 +1,11 @@
 import SwiftUI
+import SwiftData
 
 struct ItemRowView: View {
     let item: NarratorItem
     var namespace: Namespace.ID
     @Environment(NarratorViewModel.self) private var viewModel
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.accent) private var accent
 
     private var isCurrentItem: Bool {
@@ -24,24 +26,89 @@ struct ItemRowView: View {
     }
 
     var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            avatar
+        Button {
+            Task { await viewModel.playItem(item) }
+        } label: {
+            HStack(alignment: .top, spacing: 14) {
+                avatar
 
-            VStack(alignment: .leading, spacing: 6) {
-                Text(item.title)
-                    .font(.callout.weight(.semibold))
-                    .lineLimit(2)
-                    .foregroundStyle(.primary)
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(item.title)
+                        .font(.callout.weight(.semibold))
+                        .lineLimit(1)
+                        .foregroundStyle(.primary)
 
-                // Text(item.content)
-                    // .font(.caption)
-                    // .lineLimit(1)
-                    // .foregroundStyle(.secondary)
+                    Text(item.content)
+                        .font(.caption)
+                        .lineLimit(1)
+                        .foregroundStyle(.secondary)
 
-                bottomRow
+                    bottomRow
+                }
+            }
+            .contentShape(.rect)
+        }
+        .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                deleteItem()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+            .tint(.red)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: false) {
+            if item.hasGeneratedAudio {
+                Button {
+                    clearAudio()
+                } label: {
+                    Label("Regenerate", systemImage: "arrow.clockwise")
+                }
+                .tint(.blue)
+            }
+
+            Button {
+                item.isCompleted.toggle()
+                if item.isCompleted { item.playbackPosition = 0 }
+            } label: {
+                Label(item.isCompleted ? "Mark unread" : "Mark read",
+                      systemImage: item.isCompleted ? "circle" : "checkmark.circle")
+            }
+            .tint(.green)
+        }
+        .contextMenu {
+            Button {
+                Task { await viewModel.playItem(item) }
+            } label: {
+                Label("Play Audio", systemImage: "play.fill")
+            }
+
+            if item.hasGeneratedAudio {
+                Button {
+                    clearAudio()
+                } label: {
+                    Label("Regenerate audio", systemImage: "arrow.clockwise")
+                }
+            }
+            
+            Divider()
+
+            Button {
+                item.isCompleted.toggle()
+                if item.isCompleted { item.playbackPosition = 0 }
+            } label: {
+                Label(item.isCompleted ? "Mark as unread" : "Mark as read",
+                      systemImage: item.isCompleted ? "circle" : "checkmark.circle")
+            }
+
+            Divider()
+
+            Button {
+                deleteItem()
+            } label: {
+                Label("Delete", systemImage: "trash")
             }
         }
-        .contentShape(.rect)
     }
 
     // MARK: - Avatar
@@ -136,10 +203,21 @@ struct ItemRowView: View {
     }
 
     private var durationPill: some View {
-        HStack(spacing: 5) {
+        HStack(spacing: 6) {
             Image(systemName: isPlayingNow ? "pause.fill" : "play.fill")
                 .font(.caption2.weight(.bold))
                 .foregroundStyle(accent)
+
+            if item.hasGeneratedAudio && item.progressPercentage > 0.005 && !item.isCompleted {
+                Capsule()
+                    .fill(accent.opacity(0.3))
+                    .frame(width: 40, height: 5)
+                    .overlay(alignment: .leading) {
+                        Capsule()
+                            .fill(accent)
+                            .frame(width: 40 * item.progressPercentage)
+                    }
+            }
 
             Group {
                 if isGenerating {
@@ -152,10 +230,29 @@ struct ItemRowView: View {
                 }
             }
             .font(.caption.weight(.semibold).monospacedDigit())
-            .foregroundStyle(.primary)
+            .foregroundStyle(accent)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 5)
         .background(.fill.tertiary, in: Capsule())
+    }
+
+    // MARK: - Actions
+
+    private func deleteItem() {
+        if isCurrentItem {
+            viewModel.stop()
+        }
+        try? FileManager.default.removeItem(at: item.audioCacheURL)
+        withAnimation {
+            modelContext.delete(item)
+        }
+    }
+
+    private func clearAudio() {
+        try? FileManager.default.removeItem(at: item.audioCacheURL)
+        item.playbackPosition = 0
+        item.audioDuration = 0
+        item.isCompleted = false
     }
 }

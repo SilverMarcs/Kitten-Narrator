@@ -124,7 +124,7 @@ final class NarratorViewModel {
             audioPlayer.updateNowPlayingInfo(title: item.title, artworkURL: item.artworkURL.flatMap(URL.init(string:)))
 
             var firstChunk = true
-            let stream = tts.generateStreaming(item.content, voice: voice, speed: playbackSpeed)
+            let stream = await tts.generateStreaming(item.content, voice: voice, speed: playbackSpeed)
 
             for try await chunk in stream {
                 guard currentItem?.id == item.id else { return }

@@ -65,7 +65,8 @@ struct LibraryFilterBar: View {
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
                         .glassEffect(.regular, in: .capsule)
-                        .transition(.scale.combined(with: .opacity))
+                        .contentTransition(.numericText())
+//                        .transition(.scale.combined(with: .opacity))
                 }
             }
         }

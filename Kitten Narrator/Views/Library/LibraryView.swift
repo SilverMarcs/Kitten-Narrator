@@ -34,6 +34,16 @@ struct LibraryView: View {
         }
     }
 
+    private var nowPlayingItem: NarratorItem? {
+        guard let current = viewModel.currentItem else { return nil }
+        return filteredItems.first { $0.id == current.id }
+    }
+
+    private var libraryItems: [NarratorItem] {
+        guard let current = viewModel.currentItem else { return filteredItems }
+        return filteredItems.filter { $0.id != current.id }
+    }
+
     var body: some View {
         NavigationStack {
             Group {
@@ -47,23 +57,23 @@ struct LibraryView: View {
             }
             .background(libraryBackdrop.ignoresSafeArea())
             .navigationTitle("Library")
-            #if os(iOS)
-            .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search narrations")
-            #else
+            .toolbarTitleDisplayMode(.inlineLarge)
             .searchable(text: $searchText, prompt: "Search narrations")
-            #endif
+            .searchPresentationToolbarBehavior(.avoidHidingContent)
             .toolbar {
-                #if os(iOS)
-                ToolbarItem(placement: .topBarLeading) {
-                    settingsButton
-                }
-                #else
-                ToolbarItem(placement: .navigation) {
-                    settingsButton
-                }
-                #endif
-
                 ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        showSettings = true
+                    } label: {
+                        Label("Settings", systemImage: "gear")
+                    }
+                }
+
+                DefaultToolbarItem(kind: .search, placement: .bottomBar)
+
+                ToolbarSpacer(.fixed, placement: .bottomBar)
+
+                ToolbarItem(placement: .bottomBar) {
                     Button {
                         viewModel.showAddContent = true
                     } label: {
@@ -107,14 +117,6 @@ struct LibraryView: View {
         .animation(.smooth(duration: 0.6), value: accent)
     }
 
-    private var settingsButton: some View {
-        Button {
-            showSettings = true
-        } label: {
-            Label("Settings", systemImage: "slider.horizontal.3")
-        }
-    }
-
     // MARK: - No results
 
     private var noResultsState: some View {
@@ -132,69 +134,16 @@ struct LibraryView: View {
 
     private var itemList: some View {
         List {
-            ForEach(filteredItems) { item in
-                Button {
-                    Task { await viewModel.playItem(item) }
-                } label: {
+            if let nowPlayingItem {
+                Section("Now Playing") {
+                    ItemRowView(item: nowPlayingItem, namespace: namespace)
+                }
+                .listRowBackground(sectionBackground)
+            }
+
+            Section("Playlist") {
+                ForEach(libraryItems) { item in
                     ItemRowView(item: item, namespace: namespace)
-                }
-                .buttonStyle(.plain)
-                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
-                    Button(role: .destructive) {
-                        deleteItem(item)
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
-                }
-                .swipeActions(edge: .leading, allowsFullSwipe: false) {
-                    if item.hasGeneratedAudio {
-                        Button {
-                            clearAudio(item)
-                        } label: {
-                            Label("Regenerate", systemImage: "arrow.clockwise")
-                        }
-                        .tint(.blue)
-                    }
-
-                    Button {
-                        item.isCompleted.toggle()
-                        if item.isCompleted { item.playbackPosition = 0 }
-                    } label: {
-                        Label(item.isCompleted ? "Mark unread" : "Mark read",
-                              systemImage: item.isCompleted ? "circle" : "checkmark.circle")
-                    }
-                    .tint(.green)
-                }
-                .contextMenu {
-                    Button {
-                        Task { await viewModel.playItem(item) }
-                    } label: {
-                        Label("Play", systemImage: "play.fill")
-                    }
-
-                    if item.hasGeneratedAudio {
-                        Button {
-                            clearAudio(item)
-                        } label: {
-                            Label("Regenerate audio", systemImage: "arrow.clockwise")
-                        }
-                    }
-
-                    Button {
-                        item.isCompleted.toggle()
-                        if item.isCompleted { item.playbackPosition = 0 }
-                    } label: {
-                        Label(item.isCompleted ? "Mark as unread" : "Mark as read",
-                              systemImage: item.isCompleted ? "circle" : "checkmark.circle")
-                    }
-
-                    Divider()
-
-                    Button(role: .destructive) {
-                        deleteItem(item)
-                    } label: {
-                        Label("Delete", systemImage: "trash")
-                    }
                 }
             }
             .listRowBackground(sectionBackground)
@@ -206,24 +155,5 @@ struct LibraryView: View {
         colorScheme == .dark
             ? Color.white.opacity(0.1)
             : Color.black.opacity(0.04)
-    }
-
-    // MARK: - Actions
-
-    private func deleteItem(_ item: NarratorItem) {
-        if viewModel.currentItem?.id == item.id {
-            viewModel.stop()
-        }
-        try? FileManager.default.removeItem(at: item.audioCacheURL)
-        withAnimation {
-            modelContext.delete(item)
-        }
-    }
-
-    private func clearAudio(_ item: NarratorItem) {
-        try? FileManager.default.removeItem(at: item.audioCacheURL)
-        item.playbackPosition = 0
-        item.audioDuration = 0
-        item.isCompleted = false
     }
 }

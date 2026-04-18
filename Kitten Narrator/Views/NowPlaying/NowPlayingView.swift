@@ -8,7 +8,7 @@ struct NowPlayingView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
 
-    @State private var showLyrics = true
+    @State private var showLyrics = false
     @Namespace private var artworkNS
 
     private var voice: VoiceOption {
