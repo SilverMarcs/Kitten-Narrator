@@ -133,7 +133,7 @@ struct AddContentView: View {
                 .scrollContentBackground(.hidden)
                 .overlay(alignment: .topLeading) {
                     if textContent.isEmpty {
-                        Text("Paste or write what you'd like narrated…")
+                        Text("Paste or write what you'd like narrated...")
                             .foregroundStyle(.tertiary)
                             .padding(.horizontal, 5)
                             .padding(.vertical, 8)
@@ -149,6 +149,7 @@ struct AddContentView: View {
         }
         .listRowBackground(sectionBackground)
     }
+
     // MARK: - URL
 
     @ViewBuilder

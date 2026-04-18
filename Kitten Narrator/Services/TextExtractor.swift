@@ -11,7 +11,6 @@ enum TextExtractor {
 
         var text = html
 
-        // Remove non-content sections
         let removeTags = ["script", "style", "nav", "header", "footer", "aside", "noscript"]
         for tag in removeTags {
             text = text.replacingOccurrences(
@@ -21,7 +20,6 @@ enum TextExtractor {
             )
         }
 
-        // Replace block-level tags with newlines
         let blockTags = ["p", "div", "br", "h1", "h2", "h3", "h4", "h5", "h6", "li", "tr", "blockquote", "article", "section"]
         for tag in blockTags {
             text = text.replacingOccurrences(
@@ -31,10 +29,8 @@ enum TextExtractor {
             )
         }
 
-        // Strip remaining HTML tags
         text = text.replacingOccurrences(of: "<[^>]+>", with: "", options: .regularExpression)
 
-        // Decode common HTML entities
         let entities: [(String, String)] = [
             ("&amp;", "&"), ("&lt;", "<"), ("&gt;", ">"),
             ("&quot;", "\""), ("&apos;", "'"), ("&#39;", "'"),
@@ -46,7 +42,6 @@ enum TextExtractor {
             text = text.replacingOccurrences(of: entity, with: replacement)
         }
 
-        // Decode numeric entities
         text = text.replacingOccurrences(
             of: "&#(\\d+);",
             with: "",
@@ -65,7 +60,6 @@ enum TextExtractor {
             }
         }
 
-        // Clean whitespace
         text = text.replacingOccurrences(of: "[ \\t]+", with: " ", options: .regularExpression)
         text = text.replacingOccurrences(of: "\n[ \\t]+", with: "\n", options: .regularExpression)
         text = text.replacingOccurrences(of: "\\n{3,}", with: "\n\n", options: .regularExpression)

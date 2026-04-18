@@ -2,8 +2,7 @@ import SwiftUI
 
 struct ItemRowView: View {
     let item: NarratorItem
-    let viewModel: NarratorViewModel
-
+    @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.accent) private var accent
 
     private var isCurrentItem: Bool {
@@ -73,7 +72,7 @@ struct ItemRowView: View {
                 .font(.callout.weight(.semibold))
                 .lineLimit(2)
                 .foregroundStyle(.primary)
-            
+
             Divider()
 
             HStack(spacing: 8) {

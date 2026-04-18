@@ -2,12 +2,14 @@ import SwiftUI
 import SwiftData
 
 struct ContentView: View {
-    @State private var viewModel = NarratorViewModel()
+    @Environment(NarratorViewModel.self) private var viewModel
     @Namespace private var playerNS
 
     private let artworkTransitionID = "now-playing-artwork"
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         Group {
             switch viewModel.appState {
             case .loading:
@@ -22,13 +24,12 @@ struct ContentView: View {
                 mainContent
                     .transition(.opacity)
 
-            case .error(let message):
-                errorView(message)
+            case .error:
+                errorView
                     .transition(.opacity)
             }
         }
         .animation(.smooth(duration: 0.4), value: viewModel.appState)
-        // Whole-app theming driven by the selected voice
         .tint(viewModel.currentVoice.color)
         .environment(\.accent, viewModel.currentVoice.color)
         .task {
@@ -53,7 +54,6 @@ struct ContentView: View {
     private var nowPlayingSheet: some View {
         let root = NavigationStack {
             NowPlayingView(
-                viewModel: viewModel,
                 namespace: playerNS,
                 artworkID: artworkTransitionID
             )
@@ -70,14 +70,12 @@ struct ContentView: View {
     // MARK: - Main Content
 
     private var mainContent: some View {
-        LibraryView(viewModel: viewModel)
+        LibraryView()
             .safeAreaBar(edge: .bottom) {
                 if viewModel.currentItem != nil {
                     MiniPlayerView(
-                        viewModel: viewModel,
                         namespace: playerNS,
-                        artworkID: artworkTransitionID,
-                        onTap: { viewModel.showNowPlaying = true }
+                        artworkID: artworkTransitionID
                     )
                     .padding(.horizontal, 14)
                     .padding(.bottom, 6)
@@ -104,7 +102,7 @@ struct ContentView: View {
                                       options: .repeat(.continuous))
                 }
 
-                Text("Waking up Narrator…")
+                Text("Waking up Narrator...")
                     .font(.callout.weight(.medium))
                     .foregroundStyle(.secondary)
             }
@@ -113,12 +111,13 @@ struct ContentView: View {
 
     // MARK: - Error
 
-    private func errorView(_ message: String) -> some View {
+    private var errorView: some View {
         Text("Unknown Error")
     }
 }
 
 #Preview {
     ContentView()
+        .environment(NarratorViewModel())
         .modelContainer(for: NarratorItem.self, inMemory: true)
 }

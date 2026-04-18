@@ -8,20 +8,18 @@ final class AudioPlayerService: NSObject {
     var duration: TimeInterval = 0
     var rate: Float = 1.0
 
-    /// True while chunks are still being appended via ``appendAudio(_:)``.
     var isStreamingGeneration = false
 
-    // MARK: - File-based playback (cached audio)
+    // MARK: - File-based playback
 
     private var audioPlayer: AVAudioPlayer?
 
-    // MARK: - Streaming playback (progressive generation)
+    // MARK: - Streaming playback
 
     private var audioEngine: AVAudioEngine?
     private var playerNode: AVAudioPlayerNode?
     private var streamingFormat: AVAudioFormat?
     private var totalStreamedFrames: Int = 0
-    /// Accumulated samples for seeking and WAV export during streaming.
     private(set) var accumulatedSamples: [Float] = []
 
     // MARK: - Shared
@@ -64,7 +62,6 @@ final class AudioPlayerService: NSObject {
         engine.attach(player)
         engine.connect(player, to: engine.mainMixerNode, format: format)
         try engine.start()
-        // Don't call player.play() yet — wait for the first buffer in appendAudio().
 
         audioEngine = engine
         playerNode = player
@@ -106,7 +103,6 @@ final class AudioPlayerService: NSObject {
 
     func finishStreaming() {
         isStreamingGeneration = false
-        // Schedule a completion callback so we know when all buffers drain.
         guard let player = playerNode, let format = streamingFormat else { return }
         let silence = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1)!
         silence.frameLength = 0
@@ -154,7 +150,6 @@ final class AudioPlayerService: NSObject {
         let clamped = min(max(position, 0), duration)
 
         if let player = playerNode, let format = streamingFormat {
-            // Streaming seek: reschedule from accumulated samples.
             let startSample = Int(clamped * format.sampleRate)
             guard startSample < accumulatedSamples.count else { return }
 
@@ -171,7 +166,6 @@ final class AudioPlayerService: NSObject {
             player.scheduleBuffer(buffer)
             player.play()
             currentPosition = clamped
-            // Offset tracking needs to account for the seek
             streamSeekOffset = clamped
         } else {
             audioPlayer?.currentTime = clamped
@@ -191,7 +185,6 @@ final class AudioPlayerService: NSObject {
     func setRate(_ newRate: Float) {
         let clamped = min(max(newRate, 0.5), 2.0)
         audioPlayer?.rate = clamped
-        // Streaming mode: rate is baked into generated audio, no runtime adjustment.
         self.rate = clamped
         updateNowPlayingElapsed()
     }

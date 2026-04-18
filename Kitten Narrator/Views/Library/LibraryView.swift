@@ -2,9 +2,9 @@ import SwiftUI
 import SwiftData
 
 struct LibraryView: View {
+    @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \NarratorItem.createdAt, order: .reverse) private var items: [NarratorItem]
-    var viewModel: NarratorViewModel
 
     @Environment(\.accent) private var accent
     @Environment(\.colorScheme) private var colorScheme
@@ -12,27 +12,6 @@ struct LibraryView: View {
     @State private var searchText = ""
     @State private var filter: LibraryFilter = .all
     @State private var showSettings = false
-
-    enum LibraryFilter: String, CaseIterable, Identifiable {
-        case all, unfinished, completed
-        var id: String { rawValue }
-        var title: String {
-            switch self {
-            case .all: "All"
-            case .unfinished: "In progress"
-            case .completed: "Finished"
-            }
-        }
-        var icon: String {
-            switch self {
-            case .all: "square.stack"
-            case .unfinished: "hourglass"
-            case .completed: "checkmark.circle"
-            }
-        }
-    }
-
-    // MARK: - Derived
 
     private var filteredItems: [NarratorItem] {
         items.filter { item in
@@ -57,7 +36,7 @@ struct LibraryView: View {
         NavigationStack {
             Group {
                 if items.isEmpty {
-                    emptyState
+                    LibraryEmptyState()
                 } else if filteredItems.isEmpty {
                     noResultsState
                 } else {
@@ -91,14 +70,18 @@ struct LibraryView: View {
                 }
             }
             .sheet(isPresented: $showSettings) {
-                SettingsView(viewModel: viewModel)
+                SettingsView()
             }
             .safeAreaBar(edge: .top, spacing: 0) {
                 if !items.isEmpty {
-                    filterBar
-                        .padding(.horizontal, 16)
-                        .padding(.top, 4)
-                        .padding(.bottom, 10)
+                    LibraryFilterBar(
+                        filter: $filter,
+                        filteredCount: filteredItems.count,
+                        showCount: filter != .all || !searchText.isEmpty
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.top, 4)
+                    .padding(.bottom, 10)
                 }
             }
         }
@@ -122,8 +105,6 @@ struct LibraryView: View {
         .animation(.smooth(duration: 0.6), value: accent)
     }
 
-    // MARK: - Toolbar helpers
-
     private var settingsButton: some View {
         Button {
             showSettings = true
@@ -132,96 +113,7 @@ struct LibraryView: View {
         }
     }
 
-    // MARK: - Filter bar
-
-    private var filterBar: some View {
-        GlassEffectContainer(spacing: 8) {
-            HStack(spacing: 8) {
-                ForEach(LibraryFilter.allCases) { f in
-                    let selected = filter == f
-                    Button {
-                        withAnimation(.snappy(duration: 0.25)) { filter = f }
-                        #if os(iOS)
-                        UISelectionFeedbackGenerator().selectionChanged()
-                        #endif
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: f.icon)
-                                .font(.caption.weight(.bold))
-                            Text(f.title)
-                                .font(.subheadline.weight(.semibold))
-                        }
-                        .foregroundStyle(selected ? .white : .primary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                    }
-                    .buttonStyle(.plain)
-                    .glassEffect(
-                        selected
-                        ? .regular.tint(accent.opacity(0.85)).interactive()
-                        : .regular.interactive(),
-                        in: .capsule
-                    )
-                }
-
-                Spacer(minLength: 0)
-
-                if filter != .all || !searchText.isEmpty {
-                    Text("\(filteredItems.count)")
-                        .font(.caption.weight(.semibold).monospacedDigit())
-                        .foregroundStyle(.secondary)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 6)
-                        .glassEffect(.regular, in: .capsule)
-                        .transition(.scale.combined(with: .opacity))
-                }
-            }
-        }
-    }
-
-    // MARK: - Empty states
-
-    private var emptyState: some View {
-        ScrollView {
-            VStack(spacing: 28) {
-                Spacer(minLength: 40)
-
-                ZStack {
-                    Circle()
-                        .fill(accent.softSurface)
-                        .frame(width: 160, height: 160)
-                    Image(systemName: "headphones")
-                        .font(.system(size: 58, weight: .medium))
-                        .foregroundStyle(accent.brandGradient)
-                }
-
-                VStack(spacing: 10) {
-                    Text("Your library is quiet")
-                        .font(.title2.bold())
-                    Text("Paste an article, drop in a URL,\nor type your own words.\nNarrator handles the rest.")
-                        .font(.callout)
-                        .foregroundStyle(.secondary)
-                        .multilineTextAlignment(.center)
-                        .lineSpacing(2)
-                }
-
-                Button {
-                    viewModel.showAddContent = true
-                } label: {
-                    Label("Add something to listen to", systemImage: "plus.circle.fill")
-                        .font(.callout.weight(.semibold))
-                        .padding(.horizontal, 18)
-                        .padding(.vertical, 4)
-                }
-                .buttonStyle(.glassProminent)
-                .controlSize(.large)
-
-                Spacer()
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 32)
-        }
-    }
+    // MARK: - No results
 
     private var noResultsState: some View {
         ContentUnavailableView {
@@ -230,7 +122,7 @@ struct LibraryView: View {
         } description: {
             Text(searchText.isEmpty
                  ? "Nothing here fits this filter yet."
-                 : "Nothing matches “\(searchText)”.")
+                 : "Nothing matches \"\(searchText)\".")
         }
     }
 
@@ -242,7 +134,7 @@ struct LibraryView: View {
                 Button {
                     Task { await viewModel.playItem(item) }
                 } label: {
-                    ItemRowView(item: item, viewModel: viewModel)
+                    ItemRowView(item: item)
                 }
                 .buttonStyle(.plain)
                 .swipeActions(edge: .trailing, allowsFullSwipe: true) {
@@ -307,7 +199,7 @@ struct LibraryView: View {
         }
         .scrollContentBackground(.hidden)
     }
-    
+
     private var sectionBackground: Color {
         colorScheme == .dark
             ? Color.white.opacity(0.1)

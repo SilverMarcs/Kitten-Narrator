@@ -1,10 +1,9 @@
 import SwiftUI
 
 struct MiniPlayerView: View {
-    var viewModel: NarratorViewModel
+    @Environment(NarratorViewModel.self) private var viewModel
     var namespace: Namespace.ID
     var artworkID: String
-    var onTap: () -> Void
 
     @Environment(\.accent) private var accent
 
@@ -13,8 +12,6 @@ struct MiniPlayerView: View {
         return viewModel.audioPlayer.currentPosition / viewModel.audioPlayer.duration
     }
 
-    /// Mirror the global selection — the mini player retints along with the
-    /// rest of the app when the user switches voices.
     private var voice: VoiceOption {
         viewModel.currentVoice
     }
@@ -22,11 +19,9 @@ struct MiniPlayerView: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 12) {
-                // The artwork is the matched transition source.
                 artworkTile
                     .matchedTransitionSource(id: artworkID, in: namespace)
 
-                // Title area is tappable to open the full player.
                 VStack(alignment: .leading, spacing: 1) {
                     Text(viewModel.currentItem?.title ?? "")
                         .font(.footnote.weight(.semibold))
@@ -34,7 +29,7 @@ struct MiniPlayerView: View {
                         .foregroundStyle(.primary)
 
                     if viewModel.isGenerating {
-                        Text("Generating audio…")
+                        Text("Generating audio...")
                             .font(.caption2.weight(.medium))
                             .foregroundStyle(accent)
                     } else {
@@ -50,9 +45,8 @@ struct MiniPlayerView: View {
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
-                .onTapGesture { onTap() }
+                .onTapGesture { viewModel.showNowPlaying = true }
 
-                // Play / pause
                 Button {
                     viewModel.togglePlayPause()
                 } label: {
@@ -66,7 +60,6 @@ struct MiniPlayerView: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.isGenerating)
 
-                // Skip forward
                 Button {
                     viewModel.skipForward()
                 } label: {
@@ -82,7 +75,6 @@ struct MiniPlayerView: View {
             .padding(.horizontal, 8)
             .padding(.vertical, 8)
 
-            // Progress ribbon pinned to the bottom edge of the surface.
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -122,6 +114,6 @@ struct MiniPlayerView: View {
         }
         .frame(width: 44, height: 44)
         .contentShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-        .onTapGesture { onTap() }
+        .onTapGesture { viewModel.showNowPlaying = true }
     }
 }

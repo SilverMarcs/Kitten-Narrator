@@ -24,9 +24,6 @@ final class NarratorViewModel {
     var showNowPlaying = false
     var showAddContent = false
 
-    /// Word-level timestamps from the TTS model's predicted phoneme durations.
-    /// Built incrementally during streaming; each sentence's timings are offset
-    /// by the cumulative audio time of prior sentences.
     var wordTimings: [KittenWordTiming] = []
 
     // MARK: - Settings
@@ -93,9 +90,6 @@ final class NarratorViewModel {
         saveCurrentPosition()
         currentItem = item
         showNowPlaying = true
-
-        // No real word timings for cached replay — currentWordIndex
-        // falls back to character-weighted interpolation.
         wordTimings = []
 
         do {
@@ -137,7 +131,6 @@ final class NarratorViewModel {
 
                 audioPlayer.appendAudio(chunk.samples)
 
-                // Offset the chunk's word timings into the full-text timeline.
                 let chunkWords = chunk.inputText
                     .components(separatedBy: .whitespacesAndNewlines)
                     .filter { !$0.isEmpty }
@@ -181,7 +174,6 @@ final class NarratorViewModel {
 
             guard currentItem?.id == item.id else { return }
 
-            // Cache the complete audio as WAV for future replay.
             let samples = audioPlayer.accumulatedSamples
             let wavData = Self.encodeWAV(samples: samples, sampleRate: 24_000)
             try wavData.write(to: item.audioCacheURL, options: .atomic)
@@ -236,18 +228,11 @@ final class NarratorViewModel {
 
     // MARK: - Word Tracking
 
-    /// Index of the word currently being spoken.
-    ///
-    /// When real word timestamps are available (from the model's predicted
-    /// phoneme durations), this performs a direct time-based lookup. Otherwise
-    /// falls back to character-weighted linear interpolation.
     var currentWordIndex: Int {
         guard let item = currentItem else { return 0 }
         let pos = audioPlayer.currentPosition
 
-        // Prefer real timestamps from the TTS duration output.
         if !wordTimings.isEmpty {
-            // Find the last word whose startTime <= pos.
             var best = 0
             for (i, wt) in wordTimings.enumerated() {
                 if wt.startTime <= pos { best = i } else { break }
@@ -255,7 +240,6 @@ final class NarratorViewModel {
             return wordTimings[best].wordIndex
         }
 
-        // Fallback: character-weighted interpolation for cached replay.
         guard audioPlayer.duration > 0 else { return 0 }
         let words = item.content
             .components(separatedBy: .whitespacesAndNewlines)
@@ -290,7 +274,6 @@ final class NarratorViewModel {
 
     // MARK: - WAV Encoder
 
-    /// Encode Float32 samples as a 16-bit PCM WAV file.
     static func encodeWAV(samples: [Float], sampleRate: Int) -> Data {
         let bitsPerSample = 16
         let blockAlign = bitsPerSample / 8
@@ -302,23 +285,20 @@ final class NarratorViewModel {
         func append32(_ v: UInt32) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
         func append16(_ v: UInt16) { withUnsafeBytes(of: v.littleEndian) { d.append(contentsOf: $0) } }
 
-        // RIFF header
-        d.append(contentsOf: [0x52, 0x49, 0x46, 0x46]) // "RIFF"
+        d.append(contentsOf: [0x52, 0x49, 0x46, 0x46])
         append32(UInt32(fileSize))
-        d.append(contentsOf: [0x57, 0x41, 0x56, 0x45]) // "WAVE"
+        d.append(contentsOf: [0x57, 0x41, 0x56, 0x45])
 
-        // fmt chunk
-        d.append(contentsOf: [0x66, 0x6D, 0x74, 0x20]) // "fmt "
+        d.append(contentsOf: [0x66, 0x6D, 0x74, 0x20])
         append32(16)
-        append16(1)                                      // PCM
-        append16(1)                                      // mono
+        append16(1)
+        append16(1)
         append32(UInt32(sampleRate))
         append32(UInt32(sampleRate * blockAlign))
         append16(UInt16(blockAlign))
         append16(UInt16(bitsPerSample))
 
-        // data chunk
-        d.append(contentsOf: [0x64, 0x61, 0x74, 0x61]) // "data"
+        d.append(contentsOf: [0x64, 0x61, 0x74, 0x61])
         append32(UInt32(dataSize))
 
         for sample in samples {

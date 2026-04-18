@@ -3,6 +3,8 @@ import SwiftData
 
 @main
 struct Kitten_NarratorApp: App {
+    @State private var viewModel = NarratorViewModel()
+
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
             NarratorItem.self,
@@ -19,6 +21,7 @@ struct Kitten_NarratorApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environment(viewModel)
         }
         .modelContainer(sharedModelContainer)
     }

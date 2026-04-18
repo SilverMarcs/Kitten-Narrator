@@ -1,8 +1,5 @@
 import SwiftUI
 
-/// First-launch welcome + one-time model download.
-/// Shown only while the speech engine is being fetched. After that users
-/// land directly in the library — no friction.
 struct ModelDownloadView: View {
     let progress: Double
 
@@ -63,12 +60,10 @@ struct ModelDownloadView: View {
 
     private var heroMark: some View {
         ZStack {
-            // Outer ring
             Circle()
                 .stroke(Brand.primary.opacity(0.12), lineWidth: 1)
                 .frame(width: 220, height: 220)
 
-            // Pulsing halos
             ForEach(0..<3) { i in
                 Circle()
                     .fill(Brand.primary.opacity(0.10))
@@ -76,7 +71,6 @@ struct ModelDownloadView: View {
                     .blur(radius: CGFloat(i) * 4)
             }
 
-            // Glassy core
             Circle()
                 .fill(.ultraThinMaterial)
                 .frame(width: 128, height: 128)
@@ -123,7 +117,7 @@ struct ModelDownloadView: View {
                     .foregroundStyle(Brand.primary)
                     .contentTransition(.symbolEffect(.replace))
 
-                Text(progress >= 0.999 ? "Getting ready…" : "Installing the speech engine")
+                Text(progress >= 0.999 ? "Getting ready..." : "Installing the speech engine")
                     .font(.subheadline.weight(.semibold))
 
                 Spacer()
@@ -135,7 +129,6 @@ struct ModelDownloadView: View {
                     .animation(.linear, value: progress)
             }
 
-            // Custom progress track with a soft glow.
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -181,37 +174,5 @@ private struct FeaturePill: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .glassEffect(.regular, in: .capsule)
-    }
-}
-
-// MARK: - Aurora background
-
-/// A soft brand-tinted aurora — static, so it costs nothing at runtime.
-struct AuroraBackground: View {
-    var body: some View {
-        ZStack {
-            Color.appBackground
-
-            RadialGradient(
-                colors: [Brand.primary.opacity(0.30), .clear],
-                center: .init(x: 0.25, y: 0.18),
-                startRadius: 20,
-                endRadius: 460
-            )
-
-            RadialGradient(
-                colors: [Color(red: 1.0, green: 0.68, blue: 0.35).opacity(0.25), .clear],
-                center: .init(x: 0.85, y: 0.42),
-                startRadius: 20,
-                endRadius: 420
-            )
-
-            RadialGradient(
-                colors: [Color(red: 0.95, green: 0.40, blue: 0.30).opacity(0.20), .clear],
-                center: .init(x: 0.35, y: 0.90),
-                startRadius: 20,
-                endRadius: 420
-            )
-        }
     }
 }

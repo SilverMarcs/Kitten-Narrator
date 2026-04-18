@@ -1,12 +1,14 @@
 import SwiftUI
 
 struct SettingsView: View {
-    @Bindable var viewModel: NarratorViewModel
+    @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.dismiss) private var dismiss
     @Environment(\.accent) private var accent
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         NavigationStack {
             Form {
                 Section {
@@ -79,34 +81,35 @@ struct SettingsView: View {
         }
     }
 
-    // MARK: - Voice navigation (uses a plain NavigationLink so the tap is reliable)
+    // MARK: - Voice
 
     private var voiceNavigationRow: some View {
+        @Bindable var viewModel = viewModel
         let voice = viewModel.currentVoice
         return NavigationLink {
             VoicePickerView(selectedVoice: $viewModel.selectedVoice)
         } label: {
             Label {
                 Group {
-                Text(voice.displayName)
-                Text(voice.subtitle)
+                    Text(voice.displayName)
+                    Text(voice.subtitle)
                 }
                 .padding(.leading, 5)
             } icon: {
-               Circle()
-                .fill(voice.gradient)
-                .frame(width: 46, height: 46)
-                .overlay {
-                    Text(voice.monogram)
-                        .font(.headline.weight(.bold))
-                        .foregroundStyle(.white)
-                }
+                Circle()
+                    .fill(voice.gradient)
+                    .frame(width: 46, height: 46)
+                    .overlay {
+                        Text(voice.monogram)
+                            .font(.headline.weight(.bold))
+                            .foregroundStyle(.white)
+                    }
             }
             .padding(.leading)
         }
     }
 
-    // MARK: - Speed slider
+    // MARK: - Speed
 
     private var speedSlider: some View {
         VStack(spacing: 6) {
@@ -152,8 +155,6 @@ struct SettingsView: View {
                 .lineSpacing(1)
         }
     }
-
-    // MARK: - Helpers
 
     private var sectionBackground: Color {
         colorScheme == .dark

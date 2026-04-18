@@ -1,0 +1,88 @@
+import SwiftUI
+
+struct TranscriptStageView: View {
+    @Environment(NarratorViewModel.self) private var viewModel
+    @Environment(\.accent) private var accent
+
+    private var voice: VoiceOption {
+        viewModel.currentVoice
+    }
+
+    var body: some View {
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 12) {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(voice.gradient)
+                    .frame(width: 44, height: 44)
+                    .overlay(
+                        Image(systemName: "waveform")
+                            .font(.callout.weight(.bold))
+                            .foregroundStyle(.white)
+                    )
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(viewModel.currentItem?.title ?? "Untitled")
+                        .font(.subheadline.weight(.semibold))
+                        .lineLimit(1)
+                    Text(voice.displayName)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+
+                Spacer(minLength: 0)
+            }
+            .padding(.horizontal, 24)
+
+            transcriptScroll
+                .padding(.horizontal, 16)
+        }
+    }
+
+    private var transcriptScroll: some View {
+        let words = (viewModel.currentItem?.content ?? "")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        let activeIndex = viewModel.currentWordIndex
+
+        return ScrollViewReader { proxy in
+            ScrollView {
+                FlowLayout(horizontalSpacing: 6, verticalSpacing: 10) {
+                    ForEach(Array(words.enumerated()), id: \.offset) { index, word in
+                        Text(word)
+                            .font(.title3)
+                            .fontWeight(.medium)
+                            .foregroundStyle(wordColor(at: index, activeIndex: activeIndex))
+                            .id(index)
+                    }
+                }
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.hidden)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.0),
+                        .init(color: .black, location: 0.05),
+                        .init(color: .black, location: 0.95),
+                        .init(color: .clear, location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .onChange(of: activeIndex) {
+                withAnimation(.smooth(duration: 0.35)) {
+                    proxy.scrollTo(activeIndex, anchor: .center)
+                }
+            }
+        }
+    }
+
+    private func wordColor(at index: Int, activeIndex: Int) -> Color {
+        if index == activeIndex { return accent }
+        return index < activeIndex
+            ? Color.primary.opacity(0.35)
+            : Color.primary.opacity(0.85)
+    }
+}
