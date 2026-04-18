@@ -120,7 +120,6 @@ final class NarratorViewModel {
         showNowPlaying = true
 
         let voice = VoiceOption.from(identifier: selectedVoice).kittenVoice
-        let sentences = Self.splitIntoSentences(item.content)
 
         do {
             wordTimings = []
@@ -131,40 +130,35 @@ final class NarratorViewModel {
             audioPlayer.updateNowPlayingInfo(title: item.title)
 
             var firstChunk = true
-            for sentence in sentences {
-                // Bail out if the user switched to a different item.
+            let stream = tts.generateStreaming(item.content, voice: voice, speed: playbackSpeed)
+
+            for try await chunk in stream {
                 guard currentItem?.id == item.id else { return }
 
-                let result = try await tts.generate(sentence, voice: voice, speed: playbackSpeed)
-                audioPlayer.appendAudio(result.samples)
+                audioPlayer.appendAudio(chunk.samples)
 
-                let sentenceWords = sentence
+                // Offset the chunk's word timings into the full-text timeline.
+                let chunkWords = chunk.inputText
                     .components(separatedBy: .whitespacesAndNewlines)
                     .filter { !$0.isEmpty }
-                let chunkDuration = Double(result.samples.count) / 24_000
 
-                if !result.wordTimings.isEmpty {
-                    // Use real timestamps from the model's duration output,
-                    // capping to the original word count to avoid index mismatches
-                    // caused by text preprocessing expanding words.
-                    let count = min(result.wordTimings.count, sentenceWords.count)
+                if !chunk.wordTimings.isEmpty {
+                    let count = min(chunk.wordTimings.count, chunkWords.count)
                     for j in 0..<count {
-                        let wt = result.wordTimings[j]
+                        let wt = chunk.wordTimings[j]
                         wordTimings.append(KittenWordTiming(
                             wordIndex: cumulativeWordIndex + j,
-                            word: sentenceWords[j],
+                            word: chunkWords[j],
                             startTime: cumulativeAudioTime + wt.startTime,
                             endTime: cumulativeAudioTime + wt.endTime
                         ))
                     }
                 } else {
-                    // Fallback: synthesise character-weighted timings when the
-                    // model doesn't provide duration data.
-                    let charCounts = sentenceWords.map { $0.count }
+                    let charCounts = chunkWords.map { $0.count }
                     let totalChars = max(charCounts.reduce(0, +), 1)
                     var elapsed: Double = 0
-                    for (j, word) in sentenceWords.enumerated() {
-                        let share = chunkDuration * Double(word.count) / Double(totalChars)
+                    for (j, word) in chunkWords.enumerated() {
+                        let share = chunk.duration * Double(word.count) / Double(totalChars)
                         wordTimings.append(KittenWordTiming(
                             wordIndex: cumulativeWordIndex + j,
                             word: word,
@@ -175,8 +169,8 @@ final class NarratorViewModel {
                     }
                 }
 
-                cumulativeWordIndex += sentenceWords.count
-                cumulativeAudioTime += chunkDuration
+                cumulativeWordIndex += chunkWords.count
+                cumulativeAudioTime += chunk.duration
 
                 if firstChunk {
                     firstChunk = false
@@ -292,55 +286,6 @@ final class NarratorViewModel {
         guard let item = currentItem else { return }
         item.isCompleted = true
         item.playbackPosition = 0
-    }
-
-    // MARK: - Sentence Splitting
-
-    /// Split text into sentence-sized chunks for progressive TTS generation.
-    static func splitIntoSentences(_ text: String) -> [String] {
-        var sentences: [String] = []
-        var current = ""
-
-        for char in text {
-            current.append(char)
-            if ".!?".contains(char) {
-                let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty {
-                    sentences.append(trimmed)
-                }
-                current = ""
-            }
-        }
-
-        let remaining = current.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !remaining.isEmpty {
-            if sentences.isEmpty {
-                sentences.append(remaining)
-            } else {
-                sentences[sentences.count - 1] += " " + remaining
-            }
-        }
-
-        // Merge very short sentences so each chunk has enough text for
-        // natural-sounding TTS output.
-        var merged: [String] = []
-        var buffer = ""
-        for sentence in sentences {
-            buffer += (buffer.isEmpty ? "" : " ") + sentence
-            if buffer.count >= 80 {
-                merged.append(buffer)
-                buffer = ""
-            }
-        }
-        if !buffer.isEmpty {
-            if merged.isEmpty {
-                merged.append(buffer)
-            } else {
-                merged[merged.count - 1] += " " + buffer
-            }
-        }
-
-        return merged.isEmpty ? [text] : merged
     }
 
     // MARK: - WAV Encoder

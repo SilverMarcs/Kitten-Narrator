@@ -6,8 +6,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SilverMarcs/KittenTTS-swift.git",
       "state" : {
-        "branch" : "feature/word-timestamps",
-        "revision" : "50e56463a1a8716d5d9a56a861eee36d36d49ae1"
+        "branch" : "feature/combined",
+        "revision" : "807af8ff4909c747acccedbc08498f531b215072"
       }
     },
     {
