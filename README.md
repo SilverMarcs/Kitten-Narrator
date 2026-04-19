@@ -18,11 +18,6 @@ A text-to-speech narration app for iOS. Add articles, PDFs, or text and listen t
 <img width="200" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-20 at 01 21 56" src="https://github.com/user-attachments/assets/65bf4514-8868-4ff0-bb79-aa666d220065" />
 <img width="200" alt="Simulator Screenshot - iPhone 17 Pro - 2026-04-20 at 01 22 03" src="https://github.com/user-attachments/assets/3abbabde-c0ce-4418-b313-8a5b713eb0b8" />
 
-## Requirements
-
-- iOS 17.0+
-- Xcode 16+
-
 ## License
 
-All rights reserved.
+[MIT](LICENSE)
