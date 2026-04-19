@@ -67,6 +67,7 @@ struct LibraryView: View {
                     } label: {
                         Label("Settings", systemImage: "gear")
                     }
+                    .matchedTransitionSource(id: "settings", in: namespace)
                 }
 
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
@@ -79,10 +80,12 @@ struct LibraryView: View {
                     } label: {
                         Label("Add", systemImage: "plus")
                     }
+                    .matchedTransitionSource(id: "addContent", in: namespace)
                 }
             }
             .sheet(isPresented: $showSettings) {
                 SettingsView()
+                    .navigationTransition(.zoom(sourceID: "settings", in: namespace))
             }
             .safeAreaBar(edge: .top, spacing: 0) {
                 if !items.isEmpty {

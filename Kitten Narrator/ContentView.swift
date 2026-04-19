@@ -39,6 +39,7 @@ struct ContentView: View {
         }
         .sheet(isPresented: $viewModel.showAddContent) {
             AddContentView()
+                .navigationTransition(.zoom(sourceID: "addContent", in: playerNS))
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
                 .tint(viewModel.currentVoice.color)
