@@ -149,7 +149,7 @@ struct SettingsView: View {
                 Spacer()
             }
 
-            Text("Everything — the speech engine, the text, the generated audio — lives on this device. Nothing is sent to a server.")
+            Text("Everything is process on-device. Nothing is sent to a server.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .lineSpacing(1)

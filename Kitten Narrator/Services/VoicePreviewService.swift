@@ -9,6 +9,17 @@ final class VoicePreviewService {
     private var cacheDir: URL
     private var generatingVoices: Set<String> = []
 
+    private static let previewPhrases = [
+        "Here's how I sound.",
+        "Nice to meet you!",
+        "Let me read that for you.",
+        "Ready when you are.",
+        "How does this sound?",
+        "I'll be your narrator.",
+        "Let's get started.",
+        "Sounds good to me!",
+    ]
+
     init() {
         let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
         cacheDir = caches.appendingPathComponent("voice_previews", isDirectory: true)
@@ -21,10 +32,9 @@ final class VoicePreviewService {
 
     // MARK: - Preview
 
-    private static let previewText = "Here's a quick preview of my voice."
-
     func playPreview(for voice: VoiceOption) async {
-        let url = cacheURL(for: voice)
+        let phraseIndex = Int.random(in: 0..<Self.previewPhrases.count)
+        let url = cacheURL(for: voice, phraseIndex: phraseIndex)
 
         if FileManager.default.fileExists(atPath: url.path) {
             playFile(at: url)
@@ -35,17 +45,12 @@ final class VoicePreviewService {
         generatingVoices.insert(voice.rawValue)
 
         do {
-            var allSamples: [Float] = []
-            let stream = await tts.generateStreaming(
-                Self.previewText,
+            let result = try await tts.generate(
+                Self.previewPhrases[phraseIndex],
                 voice: voice.kittenVoice,
                 speed: 1.0
             )
-            for try await chunk in stream {
-                allSamples.append(contentsOf: chunk.samples)
-            }
-            let wav = NarratorViewModel.encodeWAV(samples: allSamples, sampleRate: 24_000)
-            try wav.write(to: url, options: .atomic)
+            try result.wavData().write(to: url, options: .atomic)
             generatingVoices.remove(voice.rawValue)
             playFile(at: url)
         } catch {
@@ -56,24 +61,14 @@ final class VoicePreviewService {
     func precacheAll() async {
         guard let tts else { return }
         for voice in VoiceOption.allCases {
-            let url = cacheURL(for: voice)
-            guard !FileManager.default.fileExists(atPath: url.path) else { continue }
-            guard !generatingVoices.contains(voice.rawValue) else { continue }
-            generatingVoices.insert(voice.rawValue)
-            do {
-                var allSamples: [Float] = []
-                let stream = await tts.generateStreaming(
-                    Self.previewText,
-                    voice: voice.kittenVoice,
-                    speed: 1.0
-                )
-                for try await chunk in stream {
-                    allSamples.append(contentsOf: chunk.samples)
-                }
-                let wav = NarratorViewModel.encodeWAV(samples: allSamples, sampleRate: 24_000)
-                try wav.write(to: url, options: .atomic)
-            } catch {}
-            generatingVoices.remove(voice.rawValue)
+            for (i, phrase) in Self.previewPhrases.enumerated() {
+                let url = cacheURL(for: voice, phraseIndex: i)
+                guard !FileManager.default.fileExists(atPath: url.path) else { continue }
+                do {
+                    let result = try await tts.generate(phrase, voice: voice.kittenVoice, speed: 1.0)
+                    try result.wavData().write(to: url, options: .atomic)
+                } catch {}
+            }
         }
     }
 
@@ -84,8 +79,8 @@ final class VoicePreviewService {
 
     // MARK: - Private
 
-    private func cacheURL(for voice: VoiceOption) -> URL {
-        cacheDir.appendingPathComponent("\(voice.rawValue)_preview.wav")
+    private func cacheURL(for voice: VoiceOption, phraseIndex: Int) -> URL {
+        cacheDir.appendingPathComponent("\(voice.rawValue)_preview_\(phraseIndex).wav")
     }
 
     private func playFile(at url: URL) {

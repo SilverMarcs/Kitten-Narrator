@@ -51,7 +51,7 @@ struct PlayerDockView: View {
                     }
                 }
             )
-            .disabled(viewModel.isGenerating)
+            .disabled(viewModel.isGenerating || viewModel.audioPlayer.isStreamingGeneration)
 
             HStack {
                 Text(formatDuration(displayedPosition))

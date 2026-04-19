@@ -174,11 +174,11 @@ struct NowPlayingView: View {
 
     private var fallbackArtwork: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: largeCornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: showLyrics ? smallCornerRadius : largeCornerRadius, style: .continuous)
                 .fill(voice.gradient)
 
             Image(systemName: "waveform")
-                .font(.system(size: 92, weight: .semibold))
+                .font(.system(size: showLyrics ? 28 : 92, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.95))
                 .symbolEffect(.variableColor.iterative.reversing,
                               options: .repeat(.continuous),

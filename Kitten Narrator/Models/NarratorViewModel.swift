@@ -200,6 +200,15 @@ final class NarratorViewModel {
         await generateAndPlay(item)
     }
 
+    func swapVoice() async {
+        guard let item = currentItem else { return }
+        audioPlayer.stop()
+        try? FileManager.default.removeItem(at: item.audioCacheURL)
+        item.voiceIdentifier = selectedVoice
+        item.playbackPosition = 0
+        await generateAndPlay(item)
+    }
+
     func togglePlayPause() {
         #if os(iOS)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()

@@ -5,6 +5,27 @@ struct VoicePickerView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(NarratorViewModel.self) private var viewModel
 
+    /// The voice that was active when the picker opened.
+    @State private var voiceOnEntry: String = ""
+    /// Whether the user has already confirmed the "restart" prompt once.
+    @State private var hasConfirmedSwap = false
+    /// Whether we're waiting for the user to confirm the first swap.
+    @State private var pendingSwapVoice: String?
+
+    private var isPlayingOnEntry: Bool { viewModel.currentItem != nil }
+
+    private var showSwapDialog: Binding<Bool> {
+        Binding(
+            get: { pendingSwapVoice != nil },
+            set: { if !$0 { selectedVoice = voiceOnEntry; pendingSwapVoice = nil } }
+        )
+    }
+
+    private var pendingVoiceName: String {
+        guard let id = pendingSwapVoice else { return "" }
+        return VoiceOption.from(identifier: id).displayName
+    }
+
     private let columns = [
         GridItem(.flexible(), spacing: 12),
         GridItem(.flexible(), spacing: 12),
@@ -24,7 +45,30 @@ struct VoicePickerView: View {
         .background(backdrop.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .navigationTitle("Voice")
-        .onDisappear { viewModel.voicePreview.stop() }
+        .onAppear { voiceOnEntry = selectedVoice }
+        .onDisappear {
+            viewModel.voicePreview.stop()
+            // If there's an unconfirmed swap, restore the original voice.
+            if pendingSwapVoice != nil {
+                selectedVoice = voiceOnEntry
+            }
+        }
+        .alert(
+            "Switch Voice",
+            isPresented: showSwapDialog
+        ) {
+            Button("Switch to \(pendingVoiceName)") {
+                hasConfirmedSwap = true
+                pendingSwapVoice = nil
+                Task { await viewModel.swapVoice() }
+            }
+            Button("Cancel", role: .cancel) {
+                selectedVoice = voiceOnEntry
+                pendingSwapVoice = nil
+            }
+        } message: {
+            Text("Playback will restart from the beginning.")
+        }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -53,6 +97,7 @@ struct VoicePickerView: View {
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
             }
+
         }
         .frame(maxWidth: .infinity)
         .padding(.vertical, 16)
@@ -75,13 +120,32 @@ struct VoicePickerView: View {
                         voice: voice,
                         isSelected: selectedVoice == voice.rawValue
                     ) {
-                        withAnimation(.snappy(duration: 0.25)) {
-                            selectedVoice = voice.rawValue
-                        }
-                        Task { await viewModel.voicePreview.playPreview(for: voice) }
+                        selectVoice(voice)
                     }
                 }
             }
+        }
+    }
+
+    private func selectVoice(_ voice: VoiceOption) {
+        guard voice.rawValue != selectedVoice else { return }
+
+        withAnimation(.snappy(duration: 0.25)) {
+            selectedVoice = voice.rawValue
+        }
+
+        Task { await viewModel.voicePreview.playPreview(for: voice) }
+
+        // Not playing anything — no swap logic needed.
+        guard isPlayingOnEntry else { return }
+
+        if hasConfirmedSwap {
+            // Already confirmed once — swap immediately.
+            pendingSwapVoice = nil
+            Task { await viewModel.swapVoice() }
+        } else {
+            // First change — show confirmation, audio keeps playing.
+            pendingSwapVoice = voice.rawValue
         }
     }
 
