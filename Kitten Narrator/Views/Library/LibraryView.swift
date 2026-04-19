@@ -6,7 +6,7 @@ struct LibraryView: View {
 
     @Environment(NarratorViewModel.self) private var viewModel
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \NarratorItem.createdAt, order: .reverse) private var items: [NarratorItem]
+    @Query(sort: \NarratorItem.sortOrder, order: .reverse) private var items: [NarratorItem]
 
     @Environment(\.accent) private var accent
     @Environment(\.colorScheme) private var colorScheme
@@ -148,10 +148,20 @@ struct LibraryView: View {
                 ForEach(libraryItems) { item in
                     ItemRowView(item: item, namespace: namespace)
                 }
+                .onMove(perform: moveItems)
             }
             .listRowBackground(sectionBackground)
         }
         .scrollContentBackground(.hidden)
+    }
+
+    private func moveItems(from source: IndexSet, to destination: Int) {
+        var reordered = libraryItems
+        reordered.move(fromOffsets: source, toOffset: destination)
+        let count = reordered.count
+        for (index, item) in reordered.enumerated() {
+            item.sortOrder = count - index
+        }
     }
 
     private var sectionBackground: Color {

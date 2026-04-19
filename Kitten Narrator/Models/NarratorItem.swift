@@ -15,6 +15,7 @@ final class NarratorItem {
     var audioDuration: Double = 0
     var voiceIdentifier: String = "bella"
     var speed: Float = 1.0
+    var sortOrder: Int = 0
 
     init(title: String, content: String, sourceType: String = "text", sourceURL: String? = nil, artworkURL: String? = nil) {
         self.id = UUID()
@@ -24,6 +25,7 @@ final class NarratorItem {
         self.sourceURL = sourceURL
         self.artworkURL = artworkURL
         self.createdAt = Date()
+        self.sortOrder = Int(Date().timeIntervalSince1970)
     }
 
     var audioCacheURL: URL {
