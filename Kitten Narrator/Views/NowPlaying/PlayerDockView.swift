@@ -19,8 +19,6 @@ struct PlayerDockView: View {
     var body: some View {
         VStack(spacing: 14) {
             progressSection
-                .opacity(viewModel.audioPlayer.isStreamingGeneration ? 0 : 1)
-                .animation(.default, value: viewModel.audioPlayer.isStreamingGeneration)
 
             controlsSection
 
@@ -112,50 +110,20 @@ struct PlayerDockView: View {
 
     private var actionRow: some View {
         HStack(spacing: 0) {
-            speedChip
+            transcriptChip
 
             Spacer(minLength: 0)
 
             voiceChip
-        }
-        .overlay {
-            transcriptChip
         }
         .frame(maxWidth: 400)
         .frame(maxWidth: .infinity)
         .padding(.horizontal, 10)
     }
 
-    private var speedChip: some View {
-        Menu {
-            ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { speed in
-                Button {
-                    viewModel.setSpeed(Float(speed))
-                } label: {
-                    HStack {
-                        Text(formatSpeed(speed))
-                        if abs(Double(viewModel.playbackSpeed) - speed) < 0.01 {
-                            Image(systemName: "checkmark")
-                        }
-                    }
-                }
-            }
-        } label: {
-            Text(formatSpeed(Double(viewModel.playbackSpeed)))
-                .font(.footnote.weight(.bold).monospacedDigit())
-                .foregroundStyle(.primary)
-                .contentTransition(.numericText())
-                .frame(width: 52, height: 38)
-                .contentShape(Capsule())
-        }
-        .buttonStyle(.plain)
-        .glassEffect(.regular.interactive(), in: .capsule)
-        .accessibilityLabel("Playback speed")
-    }
-
     private var transcriptChip: some View {
         Button {
-            withAnimation { showLyrics.toggle() }
+            withAnimation(.smooth(duration: 0.4)) { showLyrics.toggle() }
         } label: {
             Image(systemName: "quote.bubble")
                 .font(.footnote.weight(.bold))

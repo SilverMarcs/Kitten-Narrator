@@ -42,7 +42,7 @@ struct NowPlayingView: View {
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             dragHandle
-                .padding(.top, 6)
+                .padding(.top, 2)
                 .padding(.bottom, 4)
         }
         .background {
@@ -142,16 +142,49 @@ struct NowPlayingView: View {
     }
 
     private var titleSection: some View {
-        VStack(spacing: 4) {
-            Text(viewModel.currentItem?.title ?? "Untitled")
-                .font(.title2.bold())
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .foregroundStyle(.primary)
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(viewModel.currentItem?.title ?? "Untitled")
+                    .font(.title3.bold())
+                    .lineLimit(2)
+                    .foregroundStyle(.primary)
 
-            Text(voice.displayName)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(accent)
+                Text(voice.displayName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(accent)
+            }
+
+            Spacer(minLength: 0)
+
+            speedMenu
         }
+        .matchedGeometryEffect(id: "titleRow-transition", in: artworkNS, properties: .position)
+    }
+
+    private var speedMenu: some View {
+        Menu {
+            ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { speed in
+                Button {
+                    viewModel.setSpeed(Float(speed))
+                } label: {
+                    HStack {
+                        Text(formatSpeed(speed))
+                        if abs(Double(viewModel.playbackSpeed) - speed) < 0.01 {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Text(formatSpeed(Double(viewModel.playbackSpeed)))
+                .font(.footnote.weight(.bold).monospacedDigit())
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+                .frame(width: 52, height: 38)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .accessibilityLabel("Playback speed")
     }
 }

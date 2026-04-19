@@ -27,12 +27,44 @@ struct TranscriptStageView: View {
                 }
 
                 Spacer(minLength: 0)
+
+                speedMenu
             }
+            .matchedGeometryEffect(id: "titleRow-transition", in: artworkNS, properties: .position)
             .padding(.horizontal, 24)
 
             transcriptScroll
+                .clipped()
                 .padding(.horizontal, 16)
+                .padding(.bottom, 16)
         }
+    }
+
+    private var speedMenu: some View {
+        Menu {
+            ForEach([0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0], id: \.self) { speed in
+                Button {
+                    viewModel.setSpeed(Float(speed))
+                } label: {
+                    HStack {
+                        Text(formatSpeed(speed))
+                        if abs(Double(viewModel.playbackSpeed) - speed) < 0.01 {
+                            Image(systemName: "checkmark")
+                        }
+                    }
+                }
+            }
+        } label: {
+            Text(formatSpeed(Double(viewModel.playbackSpeed)))
+                .font(.footnote.weight(.bold).monospacedDigit())
+                .foregroundStyle(.primary)
+                .contentTransition(.numericText())
+                .frame(width: 52, height: 38)
+                .contentShape(Capsule())
+        }
+        .buttonStyle(.plain)
+        .glassEffect(.regular.interactive(), in: .capsule)
+        .accessibilityLabel("Playback speed")
     }
 
     private var artworkThumbnail: some View {
@@ -75,7 +107,7 @@ struct TranscriptStageView: View {
 
         return ScrollViewReader { proxy in
             ScrollView {
-                FlowLayout(horizontalSpacing: 6, verticalSpacing: 10) {
+                FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
                     ForEach(Array(words.enumerated()), id: \.offset) { index, word in
                         Text(word)
                             .font(.title3)
@@ -88,6 +120,7 @@ struct TranscriptStageView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
             }
             .scrollIndicators(.hidden)
+            .contentMargins(0, for: .scrollContent)
             .mask(
                 LinearGradient(
                     stops: [
