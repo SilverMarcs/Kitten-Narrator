@@ -3,6 +3,7 @@ import SwiftUI
 struct VoicePickerView: View {
     @Binding var selectedVoice: String
     @Environment(\.dismiss) private var dismiss
+    @Environment(NarratorViewModel.self) private var viewModel
 
     private let columns = [
         GridItem(.flexible(), spacing: 12),
@@ -23,6 +24,7 @@ struct VoicePickerView: View {
         .background(backdrop.ignoresSafeArea())
         .scrollIndicators(.hidden)
         .navigationTitle("Voice")
+        .onDisappear { viewModel.voicePreview.stop() }
         #if os(iOS)
         .navigationBarTitleDisplayMode(.inline)
         #endif
@@ -76,6 +78,7 @@ struct VoicePickerView: View {
                         withAnimation(.snappy(duration: 0.25)) {
                             selectedVoice = voice.rawValue
                         }
+                        Task { await viewModel.voicePreview.playPreview(for: voice) }
                     }
                 }
             }

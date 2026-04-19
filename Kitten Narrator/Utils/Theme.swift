@@ -66,14 +66,6 @@ extension VoiceOption {
     var monogram: String { String(displayName.prefix(1)) }
 }
 
-// MARK: - Brand (pre-library screens only)
-
-enum Brand {
-    static let primary = Color(red: 0.98, green: 0.50, blue: 0.25)
-    static var gradient: LinearGradient { primary.brandGradient }
-    static var softSurface: LinearGradient { primary.softSurface }
-}
-
 // MARK: - Waveform art
 
 struct WaveformArt: View {

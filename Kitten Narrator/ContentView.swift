@@ -82,11 +82,11 @@ struct ContentView: View {
             VStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .fill(Brand.primary.opacity(0.10))
+                        .fill(viewModel.currentVoice.color.opacity(0.10))
                         .frame(width: 120, height: 120)
                     Image(systemName: "waveform")
                         .font(.system(size: 48, weight: .semibold))
-                        .foregroundStyle(Brand.gradient)
+                        .foregroundStyle(viewModel.currentVoice.gradient)
                         .symbolEffect(.variableColor.iterative.reversing,
                                       options: .repeat(.continuous))
                 }

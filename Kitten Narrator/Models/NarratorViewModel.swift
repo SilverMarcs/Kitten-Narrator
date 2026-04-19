@@ -39,6 +39,7 @@ final class NarratorViewModel {
     // MARK: - Services
 
     let audioPlayer = AudioPlayerService()
+    let voicePreview = VoicePreviewService()
     private var tts: KittenTTS?
 
     // MARK: - Init
@@ -67,10 +68,12 @@ final class NarratorViewModel {
                 }
             }
             appState = .ready
+            voicePreview.setTTS(tts)
             audioPlayer.setupRemoteCommands()
             audioPlayer.onPlaybackFinished = { [weak self] in
                 self?.handlePlaybackFinished()
             }
+            Task { await voicePreview.precacheAll() }
         } catch {
             appState = .error(error.localizedDescription)
         }

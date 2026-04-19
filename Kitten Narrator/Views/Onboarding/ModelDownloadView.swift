@@ -3,6 +3,7 @@ import SwiftUI
 struct ModelDownloadView: View {
     let progress: Double
 
+    @Environment(\.accent) private var accent
     @State private var appear = false
 
     var body: some View {
@@ -61,12 +62,12 @@ struct ModelDownloadView: View {
     private var heroMark: some View {
         ZStack {
             Circle()
-                .stroke(Brand.primary.opacity(0.12), lineWidth: 1)
+                .stroke(accent.opacity(0.12), lineWidth: 1)
                 .frame(width: 220, height: 220)
 
             ForEach(0..<3) { i in
                 Circle()
-                    .fill(Brand.primary.opacity(0.10))
+                    .fill(accent.opacity(0.10))
                     .frame(width: 140 + CGFloat(i) * 28, height: 140 + CGFloat(i) * 28)
                     .blur(radius: CGFloat(i) * 4)
             }
@@ -85,11 +86,11 @@ struct ModelDownloadView: View {
                             lineWidth: 1
                         )
                 )
-                .shadow(color: Brand.primary.opacity(0.35), radius: 24, y: 12)
+                .shadow(color: accent.opacity(0.35), radius: 24, y: 12)
 
             Image(systemName: "waveform")
                 .font(.system(size: 54, weight: .semibold))
-                .foregroundStyle(Brand.gradient)
+                .foregroundStyle(accent.brandGradient)
                 .symbolEffect(.variableColor.iterative.reversing, options: .repeat(.continuous))
         }
         .frame(height: 240)
@@ -114,7 +115,7 @@ struct ModelDownloadView: View {
             HStack(spacing: 10) {
                 Image(systemName: progress >= 0.999 ? "checkmark.circle.fill" : "arrow.down.circle")
                     .font(.title3)
-                    .foregroundStyle(Brand.primary)
+                    .foregroundStyle(accent)
                     .contentTransition(.symbolEffect(.replace))
 
                 Text(progress >= 0.999 ? "Getting ready..." : "Installing the speech engine")
@@ -137,9 +138,9 @@ struct ModelDownloadView: View {
                             Capsule().stroke(.white.opacity(0.1), lineWidth: 1)
                         )
                     Capsule()
-                        .fill(Brand.gradient)
+                        .fill(accent.brandGradient)
                         .frame(width: max(6, geo.size.width * progress))
-                        .shadow(color: Brand.primary.opacity(0.55), radius: 10, y: 0)
+                        .shadow(color: accent.opacity(0.55), radius: 10, y: 0)
                         .animation(.linear(duration: 0.2), value: progress)
                 }
             }
@@ -161,12 +162,13 @@ struct ModelDownloadView: View {
 private struct FeaturePill: View {
     let icon: String
     let label: String
+    @Environment(\.accent) private var accent
 
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(Brand.primary)
+                .foregroundStyle(accent)
             Text(label)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
