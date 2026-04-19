@@ -20,25 +20,19 @@ struct NowPlayingView: View {
         return URL(string: str)
     }
 
-    var body: some View {
-        GeometryReader { geo in
-            VStack(spacing: 0) {
-                Group {
-                    if showLyrics {
-                        TranscriptStageView(artworkImageURL: artworkImageURL, artworkNS: artworkNS)
-                            .transition(.opacity)
-                    } else {
-                        artworkStage
-                            .transition(.opacity)
-                    }
-                }
-                .frame(height: geo.size.height * 0.7)
+    private let largeCornerRadius: CGFloat = 28
+    private let smallCornerRadius: CGFloat = 10
+    private let thumbnailSize: CGFloat = 64
 
-                PlayerDockView(showLyrics: $showLyrics)
-                    .padding(.horizontal, 24)
-                    .padding(.bottom, 16)
-                    .frame(height: geo.size.height * 0.3, alignment: .top)
-            }
+    var body: some View {
+        VStack(spacing: 0) {
+            stageArea
+                .frame(maxHeight: .infinity)
+
+            PlayerDockView(showLyrics: $showLyrics)
+                .padding(.horizontal, 24)
+                .padding(.bottom, 16)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .safeAreaInset(edge: .top, spacing: 0) {
             dragHandle
@@ -62,74 +56,125 @@ struct NowPlayingView: View {
             .accessibilityHidden(true)
     }
 
-    // MARK: - Artwork stage
+    // MARK: - Stage area
 
-    private var artworkStage: some View {
-        VStack(spacing: 16) {
-            Spacer(minLength: 0)
+    private var stageArea: some View {
+        GeometryReader { geo in
+            let contentWidth = geo.size.width - 56 // 28pt padding each side
 
-            artwork
-                .matchedGeometryEffect(id: "artwork-transition", in: artworkNS)
-                .frame(maxWidth: 320)
-                .frame(maxWidth: .infinity)
-                .padding(.horizontal, 28)
+            VStack(spacing: 16) {
+                if !showLyrics {
+                    Spacer(minLength: 0)
+                }
 
-            titleSection
-                .padding(.horizontal, 28)
+                artworkRow
 
-            Spacer(minLength: 0)
+                if showLyrics {
+                    transcriptScroll
+                        .clipped()
+                        .padding(.bottom, 16)
+                        .transition(.opacity)
+                } else {
+                    titleSection
+                        .transition(.opacity)
+
+                    Spacer(minLength: 0)
+                }
+            }
+            .frame(width: contentWidth)
+            .frame(maxWidth: .infinity)
+            .animation(.smooth(duration: 0.45), value: showLyrics)
         }
     }
 
-    private let artworkCornerRadius: CGFloat = 28
+    // MARK: - Artwork row
 
-    private var artwork: some View {
-        ZStack {
-            if let artworkImageURL {
-                AsyncImage(url: artworkImageURL) { phase in
-                    switch phase {
-                    case .success(let image):
-                        image
-                            .resizable()
-                            .aspectRatio(contentMode: .fill)
-                            .frame(minWidth: 0, maxWidth: .infinity, minHeight: 0, maxHeight: .infinity)
-                    default:
-                        fallbackArtwork
+    private var artworkRow: some View {
+        let isSmall = showLyrics
+        let corners = isSmall ? smallCornerRadius : largeCornerRadius
+
+        return HStack(spacing: isSmall ? 12 : 0) {
+            Color.clear
+                .aspectRatio(1, contentMode: .fit)
+                .frame(maxWidth: isSmall ? thumbnailSize : .infinity)
+                .overlay {
+                    artworkImage
+                        .aspectRatio(contentMode: .fill)
+                }
+                .clipShape(RoundedRectangle(cornerRadius: corners, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: corners, style: .continuous)
+                        .stroke(
+                            LinearGradient(
+                                colors: [.white.opacity(isSmall ? 0 : 0.55), .white.opacity(0.05)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: isSmall ? 0 : 1
+                        )
+                )
+                .compositingGroup()
+                .shadow(
+                    color: voice.color.opacity(isSmall ? 0 : 0.45),
+                    radius: isSmall ? 0 : 40,
+                    y: isSmall ? 0 : 20
+                )
+                .overlay {
+                    if viewModel.isGenerating && !isSmall {
+                        VStack(spacing: 14) {
+                            ProgressView()
+                                .controlSize(.large)
+                                .tint(.white)
+                            Text("Generating audio...")
+                                .font(.callout.weight(.semibold))
+                                .foregroundStyle(.white.opacity(0.9))
+                        }
                     }
                 }
-            } else {
-                fallbackArtwork
-            }
 
-            RoundedRectangle(cornerRadius: artworkCornerRadius, style: .continuous)
-                .stroke(
-                    LinearGradient(
-                        colors: [.white.opacity(0.55), .white.opacity(0.05)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+            if isSmall {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(viewModel.currentItem?.title ?? "Untitled")
+                            .font(.subheadline.weight(.semibold))
+                            .lineLimit(2)
+                        Text(voice.displayName)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
 
-            if viewModel.isGenerating {
-                VStack(spacing: 14) {
-                    ProgressView()
-                        .controlSize(.large)
-                        .tint(.white)
-                    Text("Generating audio...")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.9))
+                    Spacer(minLength: 0)
+
+                    speedMenu
                 }
+                .matchedGeometryEffect(id: "titleRow", in: artworkNS, properties: .position)
             }
         }
-        .aspectRatio(1, contentMode: .fit)
-        .clipShape(RoundedRectangle(cornerRadius: artworkCornerRadius, style: .continuous))
-        .shadow(color: voice.color.opacity(0.45), radius: 40, y: 20)
+    }
+
+    // MARK: - Artwork image
+
+    @ViewBuilder
+    private var artworkImage: some View {
+        if let artworkImageURL {
+            AsyncImage(url: artworkImageURL) { phase in
+                switch phase {
+                case .success(let image):
+                    image
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                default:
+                    fallbackArtwork
+                }
+            }
+        } else {
+            fallbackArtwork
+        }
     }
 
     private var fallbackArtwork: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: artworkCornerRadius, style: .continuous)
+            RoundedRectangle(cornerRadius: largeCornerRadius, style: .continuous)
                 .fill(voice.gradient)
 
             Image(systemName: "waveform")
@@ -141,11 +186,13 @@ struct NowPlayingView: View {
         }
     }
 
+    // MARK: - Title section
+
     private var titleSection: some View {
         HStack(alignment: .center, spacing: 12) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(viewModel.currentItem?.title ?? "Untitled")
-                    .font(.title3.bold())
+                    .font(.headline)
                     .lineLimit(2)
                     .foregroundStyle(.primary)
 
@@ -158,8 +205,10 @@ struct NowPlayingView: View {
 
             speedMenu
         }
-        .matchedGeometryEffect(id: "titleRow-transition", in: artworkNS, properties: .position)
+        .matchedGeometryEffect(id: "titleRow", in: artworkNS, properties: .position)
     }
+
+    // MARK: - Speed menu
 
     private var speedMenu: some View {
         Menu {
@@ -186,5 +235,56 @@ struct NowPlayingView: View {
         .buttonStyle(.plain)
         .glassEffect(.regular.interactive(), in: .capsule)
         .accessibilityLabel("Playback speed")
+    }
+
+    // MARK: - Transcript scroll
+
+    private var transcriptScroll: some View {
+        let words = (viewModel.currentItem?.content ?? "")
+            .components(separatedBy: .whitespacesAndNewlines)
+            .filter { !$0.isEmpty }
+        let activeIndex = viewModel.currentWordIndex
+
+        return ScrollViewReader { proxy in
+            ScrollView {
+                FlowLayout(horizontalSpacing: 6, verticalSpacing: 6) {
+                    ForEach(Array(words.enumerated()), id: \.offset) { index, word in
+                        Text(word)
+                            .font(.title3)
+                            .fontWeight(.medium)
+                            .foregroundStyle(wordColor(at: index, activeIndex: activeIndex))
+                            .id(index)
+                    }
+                }
+                .padding(8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .scrollIndicators(.hidden)
+            .contentMargins(0, for: .scrollContent)
+            .mask(
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0.0),
+                        .init(color: .black, location: 0.05),
+                        .init(color: .black, location: 0.95),
+                        .init(color: .clear, location: 1.0),
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+            )
+            .onChange(of: activeIndex) {
+                withAnimation(.smooth(duration: 0.35)) {
+                    proxy.scrollTo(activeIndex, anchor: .center)
+                }
+            }
+        }
+    }
+
+    private func wordColor(at index: Int, activeIndex: Int) -> Color {
+        if index == activeIndex { return accent }
+        return index < activeIndex
+            ? Color.primary.opacity(0.35)
+            : Color.primary.opacity(0.85)
     }
 }

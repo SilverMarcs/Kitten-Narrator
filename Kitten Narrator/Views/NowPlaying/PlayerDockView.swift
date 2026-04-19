@@ -79,7 +79,7 @@ struct PlayerDockView: View {
                     Image(systemName: viewModel.audioPlayer.isPlaying ? "pause.fill" : "play.fill")
                         .font(.system(size: 34, weight: .bold))
                         .contentTransition(.symbolEffect(.replace.downUp))
-                        .padding(15)
+                        .frame(width: 64, height: 64)
                 }
                 .buttonBorderShape(.circle)
                 .buttonStyle(.glassProminent)
@@ -123,7 +123,7 @@ struct PlayerDockView: View {
 
     private var transcriptChip: some View {
         Button {
-            withAnimation(.smooth(duration: 0.4)) { showLyrics.toggle() }
+            withAnimation { showLyrics.toggle() }
         } label: {
             Image(systemName: "quote.bubble")
                 .font(.footnote.weight(.bold))
@@ -146,15 +146,10 @@ struct PlayerDockView: View {
         return NavigationLink {
             VoicePickerView(selectedVoice: $viewModel.selectedVoice)
         } label: {
-            HStack(spacing: 6) {
-                Image(systemName: "person.wave.2.fill")
-                    .font(.footnote.weight(.bold))
-                Text(voice.displayName)
-                    .font(.footnote.weight(.bold))
-            }
-            .foregroundStyle(.primary)
-            .padding(.horizontal, 14)
-            .frame(height: 38)
+            Image(systemName: "person.wave.2.fill")
+                .font(.footnote.weight(.bold))
+                .foregroundStyle(.primary)
+                .frame(width: 52, height: 38)
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)

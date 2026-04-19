@@ -30,7 +30,6 @@ struct TranscriptStageView: View {
 
                 speedMenu
             }
-            .matchedGeometryEffect(id: "titleRow-transition", in: artworkNS, properties: .position)
             .padding(.horizontal, 24)
 
             transcriptScroll
@@ -80,7 +79,7 @@ struct TranscriptStageView: View {
                         fallbackThumbnail
                     }
                 }
-                .frame(width: 44, height: 44)
+                .frame(width: 64, height: 64)
                 .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             } else {
                 fallbackThumbnail
@@ -91,7 +90,7 @@ struct TranscriptStageView: View {
     private var fallbackThumbnail: some View {
         RoundedRectangle(cornerRadius: 10, style: .continuous)
             .fill(voice.gradient)
-            .frame(width: 44, height: 44)
+            .frame(width: 64, height: 64)
             .overlay(
                 Image(systemName: "waveform")
                     .font(.callout.weight(.bold))
