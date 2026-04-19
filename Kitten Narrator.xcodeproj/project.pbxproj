@@ -9,16 +9,60 @@
 /* Begin PBXBuildFile section */
 		0854230E2F902008007A1377 /* KittenTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 0854230D2F902008007A1377 /* KittenTTS */; };
 		085423122F9A0003007A1377 /* Reeeed in Frameworks */ = {isa = PBXBuildFile; productRef = 085423112F9A0002007A1377 /* Reeeed */; };
+		086B19D62F95415C00A3FFF9 /* NarratorShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 086B19CC2F95415C00A3FFF9 /* NarratorShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		086B19D42F95415C00A3FFF9 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 085422F42F901F45007A1377 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 086B19CB2F95415C00A3FFF9;
+			remoteInfo = NarratorShareExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		086B19D72F95415C00A3FFF9 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				086B19D62F95415C00A3FFF9 /* NarratorShareExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		085422FC2F901F45007A1377 /* Kitten Narrator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Kitten Narrator.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		086B19CC2F95415C00A3FFF9 /* NarratorShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = NarratorShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		086B19DA2F95415C00A3FFF9 /* Exceptions for "NarratorShareExtension" folder in "NarratorShareExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 086B19CB2F95415C00A3FFF9 /* NarratorShareExtension */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		085422FE2F901F45007A1377 /* Kitten Narrator */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Kitten Narrator";
+			sourceTree = "<group>";
+		};
+		086B19CD2F95415C00A3FFF9 /* NarratorShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				086B19DA2F95415C00A3FFF9 /* Exceptions for "NarratorShareExtension" folder in "NarratorShareExtension" target */,
+			);
+			path = NarratorShareExtension;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -33,6 +77,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		086B19C92F95415C00A3FFF9 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -40,6 +91,7 @@
 			isa = PBXGroup;
 			children = (
 				085422FE2F901F45007A1377 /* Kitten Narrator */,
+				086B19CD2F95415C00A3FFF9 /* NarratorShareExtension */,
 				085422FD2F901F45007A1377 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -48,6 +100,7 @@
 			isa = PBXGroup;
 			children = (
 				085422FC2F901F45007A1377 /* Kitten Narrator.app */,
+				086B19CC2F95415C00A3FFF9 /* NarratorShareExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -62,10 +115,12 @@
 				085422F82F901F45007A1377 /* Sources */,
 				085422F92F901F45007A1377 /* Frameworks */,
 				085422FA2F901F45007A1377 /* Resources */,
+				086B19D72F95415C00A3FFF9 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				086B19D52F95415C00A3FFF9 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				085422FE2F901F45007A1377 /* Kitten Narrator */,
@@ -79,6 +134,28 @@
 			productReference = 085422FC2F901F45007A1377 /* Kitten Narrator.app */;
 			productType = "com.apple.product-type.application";
 		};
+		086B19CB2F95415C00A3FFF9 /* NarratorShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 086B19DB2F95415C00A3FFF9 /* Build configuration list for PBXNativeTarget "NarratorShareExtension" */;
+			buildPhases = (
+				086B19C82F95415C00A3FFF9 /* Sources */,
+				086B19C92F95415C00A3FFF9 /* Frameworks */,
+				086B19CA2F95415C00A3FFF9 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				086B19CD2F95415C00A3FFF9 /* NarratorShareExtension */,
+			);
+			name = NarratorShareExtension;
+			packageProductDependencies = (
+			);
+			productName = NarratorShareExtension;
+			productReference = 086B19CC2F95415C00A3FFF9 /* NarratorShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -90,6 +167,9 @@
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					085422FB2F901F45007A1377 = {
+						CreatedOnToolsVersion = 26.4;
+					};
+					086B19CB2F95415C00A3FFF9 = {
 						CreatedOnToolsVersion = 26.4;
 					};
 				};
@@ -113,12 +193,20 @@
 			projectRoot = "";
 			targets = (
 				085422FB2F901F45007A1377 /* Kitten Narrator */,
+				086B19CB2F95415C00A3FFF9 /* NarratorShareExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		085422FA2F901F45007A1377 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		086B19CA2F95415C00A3FFF9 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -135,7 +223,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		086B19C82F95415C00A3FFF9 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		086B19D52F95415C00A3FFF9 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 086B19CB2F95415C00A3FFF9 /* NarratorShareExtension */;
+			targetProxy = 086B19D42F95415C00A3FFF9 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		085423072F901F47007A1377 /* Debug */ = {
@@ -259,6 +362,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Kitten Narrator/Kitten Narrator.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = J52QUTREBS;
@@ -307,6 +411,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = "Kitten Narrator/Kitten Narrator.entitlements";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 3;
 				DEVELOPMENT_TEAM = J52QUTREBS;
@@ -350,6 +455,69 @@
 			};
 			name = Release;
 		};
+		086B19D82F95415C00A3FFF9 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NarratorShareExtension/NarratorShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J52QUTREBS;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NarratorShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NarratorShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.SilverMarcs.KittenNarrator.NarratorShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		086B19D92F95415C00A3FFF9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = NarratorShareExtension/NarratorShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = J52QUTREBS;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = NarratorShareExtension/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = NarratorShareExtension;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.SilverMarcs.KittenNarrator.NarratorShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -367,6 +535,15 @@
 			buildConfigurations = (
 				0854230A2F901F47007A1377 /* Debug */,
 				0854230B2F901F47007A1377 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		086B19DB2F95415C00A3FFF9 /* Build configuration list for PBXNativeTarget "NarratorShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				086B19D82F95415C00A3FFF9 /* Debug */,
+				086B19D92F95415C00A3FFF9 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

@@ -56,6 +56,7 @@ final class NarratorItem {
         switch sourceType {
         case "url": return "link"
         case "clipboard": return "doc.on.clipboard"
+        case "pdf": return "doc.richtext"
         default: return "text.alignleft"
         }
     }
