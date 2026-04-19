@@ -345,7 +345,6 @@ struct AddContentView: View {
                 } label: {
                     Label("Choose PDF", systemImage: "doc.richtext")
                         .frame(maxWidth: .infinity)
-                        // .padding(.vertical, 8)
                 }
                 .buttonStyle(.borderless)
             }

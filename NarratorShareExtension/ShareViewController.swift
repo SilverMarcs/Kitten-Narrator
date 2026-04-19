@@ -4,15 +4,23 @@ import UniformTypeIdentifiers
 
 class ShareViewController: UIViewController {
 
+    private enum Const {
+        static let groupID = "group.com.SilverMarcs.KittenNarrator"
+        static let contentKey = "sharedContent"
+        static let sourceTypeKey = "sharedSourceType"
+        static let dateKey = "sharedContentDate"
+        static let schemeURL = "kittennarrator://share"
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         view.backgroundColor = .clear
-        handleSharedItems()
+        processIncomingItems()
     }
 
-    private func handleSharedItems() {
+    private func processIncomingItems() {
         guard let extensionItems = extensionContext?.inputItems as? [NSExtensionItem] else {
-            close()
+            finish()
             return
         }
 
@@ -33,24 +41,20 @@ class ShareViewController: UIViewController {
                     }
                 }
             }
-            close()
+            finish()
         }
     }
+
+    // MARK: - Handlers
 
     private func handleURL(_ attachment: NSItemProvider) async {
         do {
             let item = try await attachment.loadItem(forTypeIdentifier: UTType.url.identifier)
             if let url = item as? URL {
-                let shared = SharedItem(
-                    title: url.host ?? "Shared Link",
-                    content: url.absoluteString,
-                    sourceType: "shared_url",
-                    sourceURL: url.absoluteString
-                )
-                SharedItemStore.save(shared)
+                storeContent(url.absoluteString, sourceType: "shared_url")
             }
         } catch {}
-        close()
+        openHostAppAndFinish()
     }
 
     private func handleText(_ attachment: NSItemProvider) async {
@@ -58,28 +62,17 @@ class ShareViewController: UIViewController {
             let item = try await attachment.loadItem(forTypeIdentifier: UTType.plainText.identifier)
             if let text = item as? String {
                 let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { close(); return }
+                guard !trimmed.isEmpty else { finish(); return }
 
                 if (trimmed.hasPrefix("http://") || trimmed.hasPrefix("https://")),
-                   let url = URL(string: trimmed) {
-                    let shared = SharedItem(
-                        title: url.host ?? "Shared Link",
-                        content: trimmed,
-                        sourceType: "shared_url",
-                        sourceURL: trimmed
-                    )
-                    SharedItemStore.save(shared)
+                   URL(string: trimmed) != nil {
+                    storeContent(trimmed, sourceType: "shared_url")
                 } else {
-                    let shared = SharedItem(
-                        title: String(trimmed.prefix(60)),
-                        content: trimmed,
-                        sourceType: "text"
-                    )
-                    SharedItemStore.save(shared)
+                    storeContent(trimmed, sourceType: "text")
                 }
             }
         } catch {}
-        close()
+        openHostAppAndFinish()
     }
 
     private func handlePDF(_ attachment: NSItemProvider) async {
@@ -101,19 +94,43 @@ class ShareViewController: UIViewController {
                     }
                 }
                 let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { close(); return }
-                let shared = SharedItem(
-                    title: String(trimmed.prefix(60)),
-                    content: trimmed,
-                    sourceType: "pdf"
-                )
-                SharedItemStore.save(shared)
+                guard !trimmed.isEmpty else { finish(); return }
+                storeContent(trimmed, sourceType: "pdf")
             }
         } catch {}
-        close()
+        openHostAppAndFinish()
     }
 
-    private func close() {
+    // MARK: - Storage
+
+    private func storeContent(_ content: String, sourceType: String) {
+        guard let ud = UserDefaults(suiteName: Const.groupID) else { return }
+        ud.set(content, forKey: Const.contentKey)
+        ud.set(sourceType, forKey: Const.sourceTypeKey)
+        ud.set(Date(), forKey: Const.dateKey)
+        ud.synchronize()
+    }
+
+    // MARK: - Open Main App
+
+    private func openHostAppAndFinish() {
+        guard let url = URL(string: Const.schemeURL) else { finish(); return }
+
+        var responder: UIResponder? = self
+        while let current = responder {
+            if let app = current as? UIApplication {
+                app.open(url, options: [:]) { _ in }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { [weak self] in
+                    self?.finish()
+                }
+                return
+            }
+            responder = current.next
+        }
+        finish()
+    }
+
+    private func finish() {
         extensionContext?.completeRequest(returningItems: nil)
     }
 }

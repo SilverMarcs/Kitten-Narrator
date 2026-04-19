@@ -114,6 +114,14 @@ struct PlayerDockView: View {
 
             Spacer(minLength: 0)
 
+            if viewModel.isGenerating {
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(accent)
+            }
+
+            Spacer(minLength: 0)
+
             voiceChip
         }
         .frame(maxWidth: 400)

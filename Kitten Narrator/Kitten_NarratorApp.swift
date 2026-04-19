@@ -1,6 +1,10 @@
 import SwiftUI
 import SwiftData
 
+extension Notification.Name {
+    static let sharedContentReceived = Notification.Name("sharedContentReceived")
+}
+
 @main
 struct Kitten_NarratorApp: App {
     @State private var viewModel = NarratorViewModel()
@@ -22,6 +26,11 @@ struct Kitten_NarratorApp: App {
         WindowGroup {
             ContentView()
                 .environment(viewModel)
+                .onOpenURL { url in
+                    if url.scheme == "kittennarrator" {
+                        NotificationCenter.default.post(name: .sharedContentReceived, object: nil)
+                    }
+                }
         }
         .modelContainer(sharedModelContainer)
     }

@@ -119,18 +119,6 @@ struct NowPlayingView: View {
                     radius: isSmall ? 0 : 40,
                     y: isSmall ? 0 : 20
                 )
-                .overlay {
-                    if viewModel.isGenerating && !isSmall {
-                        VStack(spacing: 14) {
-                            ProgressView()
-                                .controlSize(.large)
-                                .tint(.white)
-                            Text("Generating audio...")
-                                .font(.callout.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.9))
-                        }
-                    }
-                }
 
             if isSmall {
                 HStack(spacing: 12) {

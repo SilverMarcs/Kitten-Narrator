@@ -66,6 +66,11 @@ struct ContentView: View {
             viewModel.saveCurrentPosition()
         }
         #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: .sharedContentReceived)) { _ in
+            if viewModel.appState == .ready {
+                importSharedItems()
+            }
+        }
         .onChange(of: scenePhase) {
             if scenePhase == .active && viewModel.appState == .ready {
                 importSharedItems()
@@ -139,33 +144,36 @@ struct ContentView: View {
 
     #if os(iOS)
     private func importSharedItems() {
-        let pending = SharedItemStore.load()
-        guard !pending.isEmpty else { return }
+        let groupID = "group.com.SilverMarcs.KittenNarrator"
+        guard let ud = UserDefaults(suiteName: groupID) else { return }
+        guard let content = ud.string(forKey: "sharedContent"), !content.isEmpty else { return }
 
-        for shared in pending {
-            if shared.sourceType == "shared_url", let urlString = shared.sourceURL {
-                // Create a placeholder item and fetch content in background
-                let item = NarratorItem(
-                    title: shared.title,
-                    content: "",
-                    sourceType: "url",
-                    sourceURL: urlString
-                )
-                modelContext.insert(item)
-                Task {
-                    await fetchURLForItem(item, urlString: urlString)
+        let sourceType = ud.string(forKey: "sharedSourceType") ?? "text"
+
+        if sourceType == "shared_url" {
+            let host = URL(string: content)?.host ?? "Shared Link"
+            let item = NarratorItem(title: host, content: "", sourceType: "url", sourceURL: content)
+            modelContext.insert(item)
+            Task {
+                await fetchURLForItem(item, urlString: content)
+                if !item.content.isEmpty {
+                    await viewModel.playItem(item)
                 }
-            } else {
-                let item = NarratorItem(
-                    title: shared.title,
-                    content: shared.content,
-                    sourceType: shared.sourceType
-                )
-                modelContext.insert(item)
+            }
+        } else {
+            let title = String(content.prefix(60)).trimmingCharacters(in: .whitespacesAndNewlines)
+            let item = NarratorItem(title: title, content: content, sourceType: sourceType)
+            modelContext.insert(item)
+            Task {
+                await viewModel.playItem(item)
             }
         }
 
-        SharedItemStore.clear()
+        // Clear after import
+        ud.removeObject(forKey: "sharedContent")
+        ud.removeObject(forKey: "sharedSourceType")
+        ud.removeObject(forKey: "sharedContentDate")
+        ud.synchronize()
     }
     #endif
 
