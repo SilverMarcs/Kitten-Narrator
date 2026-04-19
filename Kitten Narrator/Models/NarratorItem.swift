@@ -33,6 +33,10 @@ final class NarratorItem {
         return audioDir.appendingPathComponent("\(id.uuidString).wav")
     }
 
+    var wordTimingsCacheURL: URL {
+        audioCacheURL.deletingPathExtension().appendingPathExtension("timings.json")
+    }
+
     var hasGeneratedAudio: Bool {
         FileManager.default.fileExists(atPath: audioCacheURL.path)
     }

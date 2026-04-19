@@ -2,6 +2,30 @@ import Foundation
 import KittenTTS
 import SwiftUI
 
+extension KittenWordTiming: Codable {
+    enum CodingKeys: String, CodingKey {
+        case wordIndex, word, startTime, endTime
+    }
+
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            wordIndex: try c.decode(Int.self, forKey: .wordIndex),
+            word: try c.decode(String.self, forKey: .word),
+            startTime: try c.decode(Double.self, forKey: .startTime),
+            endTime: try c.decode(Double.self, forKey: .endTime)
+        )
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(wordIndex, forKey: .wordIndex)
+        try c.encode(word, forKey: .word)
+        try c.encode(startTime, forKey: .startTime)
+        try c.encode(endTime, forKey: .endTime)
+    }
+}
+
 @Observable
 final class NarratorViewModel {
 
@@ -93,7 +117,14 @@ final class NarratorViewModel {
         saveCurrentPosition()
         currentItem = item
         showNowPlaying = true
-        wordTimings = []
+
+        // Load cached word timings for highlight sync
+        if let data = try? Data(contentsOf: item.wordTimingsCacheURL),
+           let cached = try? JSONDecoder().decode([KittenWordTiming].self, from: data) {
+            wordTimings = cached
+        } else {
+            wordTimings = []
+        }
 
         do {
             try audioPlayer.play(
@@ -185,6 +216,28 @@ final class NarratorViewModel {
             item.speed = playbackSpeed
             item.playbackPosition = 0
 
+            // Calibrate word timings: scale to match actual audio duration
+            // so predicted timings don't drift from the real waveform.
+            if !wordTimings.isEmpty, let lastEnd = wordTimings.last?.endTime, lastEnd > 0 {
+                let actualDuration = Double(samples.count) / 24_000
+                let scale = actualDuration / lastEnd
+                if abs(scale - 1.0) > 0.001 {
+                    wordTimings = wordTimings.map {
+                        KittenWordTiming(
+                            wordIndex: $0.wordIndex,
+                            word: $0.word,
+                            startTime: $0.startTime * scale,
+                            endTime: $0.endTime * scale
+                        )
+                    }
+                }
+            }
+
+            // Persist word timings for cached playback
+            if let data = try? JSONEncoder().encode(wordTimings) {
+                try? data.write(to: item.wordTimingsCacheURL, options: .atomic)
+            }
+
             audioPlayer.finishStreaming()
         } catch {
             isGenerating = false
@@ -197,6 +250,7 @@ final class NarratorViewModel {
         guard let item = currentItem else { return }
         audioPlayer.stop()
         try? FileManager.default.removeItem(at: item.audioCacheURL)
+        try? FileManager.default.removeItem(at: item.wordTimingsCacheURL)
         await generateAndPlay(item)
     }
 
@@ -204,6 +258,7 @@ final class NarratorViewModel {
         guard let item = currentItem else { return }
         audioPlayer.stop()
         try? FileManager.default.removeItem(at: item.audioCacheURL)
+        try? FileManager.default.removeItem(at: item.wordTimingsCacheURL)
         item.voiceIdentifier = selectedVoice
         item.playbackPosition = 0
         await generateAndPlay(item)
@@ -241,35 +296,23 @@ final class NarratorViewModel {
     // MARK: - Word Tracking
 
     var currentWordIndex: Int {
-        guard let item = currentItem else { return 0 }
+        guard currentItem != nil else { return 0 }
         let pos = audioPlayer.currentPosition
 
-        if !wordTimings.isEmpty {
-            var best = 0
-            for (i, wt) in wordTimings.enumerated() {
-                if wt.startTime <= pos { best = i } else { break }
-            }
-            return wordTimings[best].wordIndex
-        }
+        guard !wordTimings.isEmpty else { return 0 }
 
-        guard audioPlayer.duration > 0 else { return 0 }
-        let words = item.content
-            .components(separatedBy: .whitespacesAndNewlines)
-            .filter { !$0.isEmpty }
-        guard !words.isEmpty else { return 0 }
-        let progress = pos / audioPlayer.duration
-        let charCounts = words.map { $0.count }
-        let totalChars = charCounts.reduce(0, +)
-        guard totalChars > 0 else {
-            return min(Int(progress * Double(words.count)), words.count - 1)
+        // Binary search: find last word whose startTime <= pos
+        var lo = 0
+        var hi = wordTimings.count - 1
+        while lo < hi {
+            let mid = (lo + hi + 1) / 2
+            if wordTimings[mid].startTime <= pos {
+                lo = mid
+            } else {
+                hi = mid - 1
+            }
         }
-        let targetChars = progress * Double(totalChars)
-        var accumulated = 0
-        for i in 0..<words.count {
-            accumulated += charCounts[i]
-            if Double(accumulated) >= targetChars { return i }
-        }
-        return words.count - 1
+        return wordTimings[lo].wordIndex
     }
 
     // MARK: - Helpers

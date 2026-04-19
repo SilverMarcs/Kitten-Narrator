@@ -244,6 +244,7 @@ struct ItemRowView: View {
             viewModel.stop()
         }
         try? FileManager.default.removeItem(at: item.audioCacheURL)
+        try? FileManager.default.removeItem(at: item.wordTimingsCacheURL)
         withAnimation {
             modelContext.delete(item)
         }
@@ -251,6 +252,7 @@ struct ItemRowView: View {
 
     private func clearAudio() {
         try? FileManager.default.removeItem(at: item.audioCacheURL)
+        try? FileManager.default.removeItem(at: item.wordTimingsCacheURL)
         item.playbackPosition = 0
         item.audioDuration = 0
         item.isCompleted = false

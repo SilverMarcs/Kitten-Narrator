@@ -25,6 +25,7 @@ final class AudioPlayerService: NSObject {
     // MARK: - Shared
 
     private var positionTask: Task<Void, Never>?
+    private var seekGeneration: Int = 0
     var onPlaybackFinished: (() -> Void)?
 
     // MARK: - File Playback
@@ -103,12 +104,19 @@ final class AudioPlayerService: NSObject {
 
     func finishStreaming() {
         isStreamingGeneration = false
+        scheduleEndOfPlaybackHandler()
+    }
+
+    private func scheduleEndOfPlaybackHandler() {
         guard let player = playerNode, let format = streamingFormat else { return }
+        let generation = seekGeneration
         let silence = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: 1)!
         silence.frameLength = 0
         player.scheduleBuffer(silence) { [weak self] in
             Task { @MainActor in
-                guard let self, self.playerNode != nil else { return }
+                guard let self,
+                      self.playerNode != nil,
+                      self.seekGeneration == generation else { return }
                 self.isPlaying = false
                 self.currentPosition = self.duration
                 self.stopPositionTracking()
@@ -153,6 +161,9 @@ final class AudioPlayerService: NSObject {
             let startSample = Int(clamped * format.sampleRate)
             guard startSample < accumulatedSamples.count else { return }
 
+            // Invalidate any pending end-of-playback handler
+            seekGeneration += 1
+
             player.stop()
             let remaining = Array(accumulatedSamples[startSample...])
             let buffer = AVAudioPCMBuffer(
@@ -167,6 +178,13 @@ final class AudioPlayerService: NSObject {
             player.play()
             currentPosition = clamped
             streamSeekOffset = clamped
+            isPlaying = true
+            startStreamPositionTracking()
+
+            // Re-schedule end-of-playback handler for the new buffer
+            if !isStreamingGeneration {
+                scheduleEndOfPlaybackHandler()
+            }
         } else {
             audioPlayer?.currentTime = clamped
             currentPosition = clamped
@@ -206,6 +224,7 @@ final class AudioPlayerService: NSObject {
         totalStreamedFrames = 0
         isStreamingGeneration = false
         streamSeekOffset = 0
+        seekGeneration += 1
 
         isPlaying = false
         currentPosition = 0
@@ -234,7 +253,7 @@ final class AudioPlayerService: NSObject {
             while !Task.isCancelled {
                 guard let self else { return }
                 self.currentPosition = self.audioPlayer?.currentTime ?? 0
-                try? await Task.sleep(for: .milliseconds(100))
+                try? await Task.sleep(for: .milliseconds(33))
             }
         }
     }
@@ -249,12 +268,12 @@ final class AudioPlayerService: NSObject {
                       nodeTime.isSampleTimeValid,
                       let playerTime = player.playerTime(forNodeTime: nodeTime)
                 else {
-                    try? await Task.sleep(for: .milliseconds(100))
+                    try? await Task.sleep(for: .milliseconds(33))
                     continue
                 }
                 let elapsed = Double(playerTime.sampleTime) / playerTime.sampleRate
                 self.currentPosition = self.streamSeekOffset + max(0, elapsed)
-                try? await Task.sleep(for: .milliseconds(100))
+                try? await Task.sleep(for: .milliseconds(33))
             }
         }
     }
