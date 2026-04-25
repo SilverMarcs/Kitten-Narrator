@@ -100,11 +100,9 @@ struct AddContentView: View {
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button(role: .close) { dismiss() }
-                        .tint(accent)
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(role: .confirm) { addItem() }
-                        .tint(accent)
                         .disabled(!canAdd)
                 }
             }

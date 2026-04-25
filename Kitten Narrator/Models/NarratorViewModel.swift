@@ -138,7 +138,7 @@ final class NarratorViewModel {
         }
     }
 
-    func generateAndPlay(_ item: NarratorItem) async {
+    func generateAndPlay(_ item: NarratorItem, autoPlay: Bool = true) async {
         guard let tts else { return }
 
         saveCurrentPosition()
@@ -154,7 +154,7 @@ final class NarratorViewModel {
             var cumulativeWordIndex = 0
             var cumulativeAudioTime: Double = 0
 
-            try audioPlayer.beginStreaming(sampleRate: 24_000)
+            try audioPlayer.beginStreaming(sampleRate: 24_000, autoPlay: autoPlay)
             audioPlayer.updateNowPlayingInfo(title: item.title, artworkURL: item.artworkURL.flatMap(URL.init(string:)))
 
             var firstChunk = true
@@ -261,7 +261,7 @@ final class NarratorViewModel {
         try? FileManager.default.removeItem(at: item.wordTimingsCacheURL)
         item.voiceIdentifier = selectedVoice
         item.playbackPosition = 0
-        await generateAndPlay(item)
+        await generateAndPlay(item, autoPlay: false)
     }
 
     func togglePlayPause() {

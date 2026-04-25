@@ -20,6 +20,7 @@ final class AudioPlayerService: NSObject {
     private var playerNode: AVAudioPlayerNode?
     private var streamingFormat: AVAudioFormat?
     private var totalStreamedFrames: Int = 0
+    private var autoPlayOnFirstChunk: Bool = true
     private(set) var accumulatedSamples: [Float] = []
 
     // MARK: - Shared
@@ -49,7 +50,7 @@ final class AudioPlayerService: NSObject {
 
     // MARK: - Streaming Playback
 
-    func beginStreaming(sampleRate: Int) throws {
+    func beginStreaming(sampleRate: Int, autoPlay: Bool = true) throws {
         setupAudioSession()
         stopAll()
 
@@ -69,6 +70,7 @@ final class AudioPlayerService: NSObject {
         streamingFormat = format
         totalStreamedFrames = 0
         accumulatedSamples = []
+        autoPlayOnFirstChunk = autoPlay
         isStreamingGeneration = true
         isPlaying = false
         currentPosition = 0
@@ -95,7 +97,7 @@ final class AudioPlayerService: NSObject {
         totalStreamedFrames += samples.count
         duration = Double(totalStreamedFrames) / format.sampleRate
 
-        if isFirstChunk {
+        if isFirstChunk && autoPlayOnFirstChunk {
             player.play()
             isPlaying = true
             startStreamPositionTracking()
@@ -223,6 +225,7 @@ final class AudioPlayerService: NSObject {
         accumulatedSamples = []
         totalStreamedFrames = 0
         isStreamingGeneration = false
+        autoPlayOnFirstChunk = true
         streamSeekOffset = 0
         seekGeneration += 1
 

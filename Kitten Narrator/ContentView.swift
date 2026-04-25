@@ -41,7 +41,6 @@ struct ContentView: View {
             }
         }
         .animation(.smooth(duration: 0.4), value: viewModel.appState)
-        .tint(viewModel.currentVoice.color)
         .environment(\.accent, viewModel.currentVoice.color)
         .task {
             await viewModel.initialize()
@@ -56,7 +55,6 @@ struct ContentView: View {
                 .navigationTransition(.zoom(sourceID: "addContent", in: playerNS))
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
-                .tint(viewModel.currentVoice.color)
                 .environment(\.accent, viewModel.currentVoice.color)
         }
         .fullScreenCover(isPresented: $viewModel.showNowPlaying) {
@@ -93,7 +91,6 @@ struct ContentView: View {
         let root = NavigationStack {
             NowPlayingView(namespace: playerNS, artworkID: artworkTransitionID)
         }
-        .tint(viewModel.currentVoice.color)
         .environment(\.accent, viewModel.currentVoice.color)
         #if os(iOS)
         root.navigationTransition(.zoom(sourceID: artworkTransitionID, in: playerNS))

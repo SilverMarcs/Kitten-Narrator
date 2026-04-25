@@ -192,7 +192,7 @@ struct ItemRowView: View {
                 if item.isCompleted {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.caption)
-                        .foregroundStyle(.secondary)
+                        .foregroundStyle(accent)
                 }
 
                 Text(item.createdAt.formatted(.dateTime.month(.abbreviated).day()))

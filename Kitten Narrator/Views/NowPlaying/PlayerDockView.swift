@@ -51,6 +51,7 @@ struct PlayerDockView: View {
                     }
                 }
             )
+            .tint(accent)
             .disabled(viewModel.isGenerating || viewModel.audioPlayer.isStreamingGeneration)
 
             HStack {
@@ -83,6 +84,7 @@ struct PlayerDockView: View {
                 }
                 .buttonBorderShape(.circle)
                 .buttonStyle(.glassProminent)
+                .tint(accent)
                 .disabled(viewModel.isGenerating)
                 .accessibilityLabel(viewModel.audioPlayer.isPlaying ? "Pause" : "Play")
 
