@@ -105,18 +105,18 @@ final class NarratorViewModel {
 
     // MARK: - Playback
 
-    func playItem(_ item: NarratorItem) async {
+    func playItem(_ item: NarratorItem, autoShow: Bool = true) async {
         if item.hasGeneratedAudio && item.voiceIdentifier == selectedVoice {
-            startPlayback(item)
+            startPlayback(item, autoShow: autoShow)
             return
         }
-        await generateAndPlay(item)
+        await generateAndPlay(item, autoShow: autoShow)
     }
 
-    private func startPlayback(_ item: NarratorItem) {
+    private func startPlayback(_ item: NarratorItem, autoShow: Bool = true) {
         saveCurrentPosition()
         currentItem = item
-        showNowPlaying = true
+        if autoShow { showNowPlaying = true }
 
         // Load cached word timings for highlight sync
         if let data = try? Data(contentsOf: item.wordTimingsCacheURL),
@@ -138,14 +138,14 @@ final class NarratorViewModel {
         }
     }
 
-    func generateAndPlay(_ item: NarratorItem, autoPlay: Bool = true) async {
+    func generateAndPlay(_ item: NarratorItem, autoPlay: Bool = true, autoShow: Bool = true) async {
         guard let tts else { return }
 
         saveCurrentPosition()
         isGenerating = true
         generatingItemID = item.id
         currentItem = item
-        showNowPlaying = true
+        if autoShow { showNowPlaying = true }
 
         let voice = VoiceOption.from(identifier: selectedVoice).kittenVoice
 

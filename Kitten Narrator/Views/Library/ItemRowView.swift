@@ -30,7 +30,10 @@ struct ItemRowView: View {
             Task { await viewModel.playItem(item) }
         } label: {
             HStack(alignment: .top, spacing: 14) {
-                avatar
+                Button(action: handleAvatarTap) {
+                    avatar
+                }
+                .buttonStyle(.plain)
 
                 VStack(alignment: .leading, spacing: 6) {
                     Text(item.title)
@@ -238,6 +241,14 @@ struct ItemRowView: View {
     }
 
     // MARK: - Actions
+
+    private func handleAvatarTap() {
+        if isCurrentItem {
+            viewModel.togglePlayPause()
+        } else {
+            Task { await viewModel.playItem(item, autoShow: false) }
+        }
+    }
 
     private func deleteItem() {
         if isCurrentItem {
