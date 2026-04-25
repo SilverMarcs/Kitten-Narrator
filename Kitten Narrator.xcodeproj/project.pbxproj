@@ -42,19 +42,19 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AA0000012F9A000000000001 /* Exceptions for "Kitten Narrator" folder in "Kitten Narrator" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = 085422FB2F901F45007A1377 /* Kitten Narrator */;
-		};
 		086B19DA2F95415C00A3FFF9 /* Exceptions for "NarratorShareExtension" folder in "NarratorShareExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = 086B19CB2F95415C00A3FFF9 /* NarratorShareExtension */;
+		};
+		AA0000012F9A000000000001 /* Exceptions for "Kitten Narrator" folder in "Kitten Narrator" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 085422FB2F901F45007A1377 /* Kitten Narrator */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
