@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		0854230E2F902008007A1377 /* KittenTTS in Frameworks */ = {isa = PBXBuildFile; productRef = 0854230D2F902008007A1377 /* KittenTTS */; };
 		085423122F9A0003007A1377 /* Reeeed in Frameworks */ = {isa = PBXBuildFile; productRef = 085423112F9A0002007A1377 /* Reeeed */; };
-		086B19D62F95415C00A3FFF9 /* NarratorShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 086B19CC2F95415C00A3FFF9 /* NarratorShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		086B19D62F95415C00A3FFF9 /* NarratorShareExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 086B19CC2F95415C00A3FFF9 /* NarratorShareExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -245,6 +245,7 @@
 /* Begin PBXTargetDependency section */
 		086B19D52F95415C00A3FFF9 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = 086B19CB2F95415C00A3FFF9 /* NarratorShareExtension */;
 			targetProxy = 086B19D42F95415C00A3FFF9 /* PBXContainerItemProxy */;
 		};
@@ -374,7 +375,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Kitten Narrator/Kitten Narrator.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = J52QUTREBS;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -424,7 +425,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = "Kitten Narrator/Kitten Narrator.entitlements";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = J52QUTREBS;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -472,7 +473,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = NarratorShareExtension/NarratorShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = J52QUTREBS;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NarratorShareExtension/Info.plist;
@@ -503,7 +504,7 @@
 			buildSettings = {
 				CODE_SIGN_ENTITLEMENTS = NarratorShareExtension/NarratorShareExtension.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 5;
+				CURRENT_PROJECT_VERSION = 6;
 				DEVELOPMENT_TEAM = J52QUTREBS;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = NarratorShareExtension/Info.plist;

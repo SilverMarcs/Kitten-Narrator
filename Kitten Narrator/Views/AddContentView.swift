@@ -67,10 +67,12 @@ struct AddContentView: View {
                         errorMessage = nil
                     }
                 }
+                #if os(iOS)
                 .listSectionMargins(.horizontal, 0)
+                .listSectionSpacing(.compact)
+                #endif
                 .listSectionSeparator(.hidden)
                 .listRowBackground(Color.clear)
-                .listSectionSpacing(.compact)
 
                 if source == .text {
                     textSection

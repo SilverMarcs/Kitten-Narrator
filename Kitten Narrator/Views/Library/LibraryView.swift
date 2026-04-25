@@ -73,6 +73,7 @@ struct LibraryView: View {
                     .matchedTransitionSource(id: "settings", in: namespace)
                 }
 
+                #if os(iOS)
                 DefaultToolbarItem(kind: .search, placement: .bottomBar)
 
                 ToolbarSpacer(.fixed, placement: .bottomBar)
@@ -85,10 +86,24 @@ struct LibraryView: View {
                     }
                     .matchedTransitionSource(id: "addContent", in: namespace)
                 }
+                #else
+                ToolbarItem(placement: .primaryAction) {
+                    Button {
+                        viewModel.showAddContent = true
+                    } label: {
+                        Label("Add", systemImage: "plus")
+                    }
+                    .matchedTransitionSource(id: "addContent", in: namespace)
+                }
+                #endif
             }
             .sheet(isPresented: $showSettings) {
+                #if os(iOS)
                 SettingsView()
                     .navigationTransition(.zoom(sourceID: "settings", in: namespace))
+                #else
+                SettingsView()
+                #endif
             }
             .safeAreaBar(edge: .top, spacing: 0) {
                 if !items.isEmpty {

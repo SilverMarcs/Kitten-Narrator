@@ -51,15 +51,26 @@ struct ContentView: View {
             #endif
         }
         .sheet(isPresented: $viewModel.showAddContent) {
+            #if os(iOS)
             AddContentView()
                 .navigationTransition(.zoom(sourceID: "addContent", in: playerNS))
                 .presentationDetents([.large])
                 .presentationDragIndicator(.hidden)
                 .environment(\.accent, viewModel.currentVoice.color)
+            #else
+            AddContentView()
+                .environment(\.accent, viewModel.currentVoice.color)
+            #endif
         }
+        #if os(iOS)
         .fullScreenCover(isPresented: $viewModel.showNowPlaying) {
             nowPlayingSheet
         }
+        #else
+        .sheet(isPresented: $viewModel.showNowPlaying) {
+            nowPlayingSheet
+        }
+        #endif
         .onChange(of: viewModel.audioPlayer.isPlaying) {
             viewModel.saveCurrentPosition()
         }
@@ -134,7 +145,20 @@ struct ContentView: View {
     // MARK: - Error
 
     private var errorView: some View {
-        Text("Unknown Error")
+        let message: String = {
+            if case .error(let msg) = viewModel.appState { return msg }
+            return "Unknown Error"
+        }()
+        return ContentUnavailableView {
+            Label("Something went wrong", systemImage: "exclamationmark.triangle")
+        } description: {
+            Text(message)
+        } actions: {
+            Button("Try Again") {
+                Task { await viewModel.initialize() }
+            }
+            .buttonStyle(.borderedProminent)
+        }
     }
 
     // MARK: - Share Extension Import

@@ -1,5 +1,10 @@
 import AVFoundation
 import MediaPlayer
+#if os(iOS)
+import UIKit
+#elseif os(macOS)
+import AppKit
+#endif
 
 @Observable
 final class AudioPlayerService: NSObject {
