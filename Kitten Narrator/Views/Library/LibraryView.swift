@@ -47,12 +47,15 @@ struct LibraryView: View {
     var body: some View {
         NavigationStack {
             Group {
-                if items.isEmpty {
-                    LibraryEmptyState()
-                } else if filteredItems.isEmpty {
+                if filteredItems.isEmpty && !items.isEmpty {
                     noResultsState
                 } else {
                     itemList
+                }
+            }
+            .overlay {
+                if items.isEmpty {
+                    LibraryEmptyState()
                 }
             }
             .background(libraryBackdrop.ignoresSafeArea())
