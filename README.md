@@ -2,6 +2,8 @@
 
 A text-to-speech narration app for iOS. Add articles, PDFs, or text and listen to them with natural-sounding voices.
 
+<a href="https://apps.apple.com/app/id6762491458"><img src="https://tools.applemediaservices.com/api/badges/download-on-the-app-store/black/en-us" alt="Download on the App Store" height="50"></a>
+
 ## Features
 
 - Import content from text, URLs, PDFs, or clipboard
